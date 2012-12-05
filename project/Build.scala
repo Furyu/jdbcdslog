@@ -1,6 +1,5 @@
 import sbt._
 import Keys._
-import PlayProject._
 
 object ApplicationBuild extends Build {
 
@@ -10,7 +9,7 @@ object ApplicationBuild extends Build {
   val appOrganization = "jp.furyu.jdbcdslog_fork"
 
   lazy val root = Project("root", base = file("."))
-    .aggregate(core, slf4j, fluent, play2)
+    .aggregate(core, slf4j, fluent)
 
   lazy val core = Project("core", base = file("core")).settings(
     organization := appOrganization,
@@ -43,7 +42,8 @@ object ApplicationBuild extends Build {
         "com.sun.jmx", "jmxri"
       ),
       "junit" % "junit" % "4.9" % "test",
-      "hsqldb" % "hsqldb" % "1.8.0.10" % "test"
+      "hsqldb" % "hsqldb" % "1.8.0.10" % "test",
+      "com.novocode" % "junit-interface" % "0.10-M2" % "test"
     )
   )
 
@@ -71,6 +71,6 @@ object ApplicationBuild extends Build {
   )
   
 
-  lazy val play2 = PlayProject("tracker-sample", path = file("tracker/sample"), mainLang = SCALA).dependsOn(core, slf4j)
+//  lazy val play2 = PlayProject("tracker-sample", path = file("tracker/sample"), mainLang = SCALA).dependsOn(core, slf4j)
 
 }

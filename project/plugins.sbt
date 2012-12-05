@@ -12,7 +12,7 @@ resolvers ++= Seq(
     Resolver.url("Play", url("http://download.playframework.org/ivy-releases/"))(Resolver.ivyStylePatterns)
 )
 
-addSbtPlugin("play" % "sbt-plugin" % "2.0.1")
+//addSbtPlugin("play" % "sbt-plugin" % "2.0.4")
 
 resolvers += Resolver.url(
   "sbt-plugin-releases",
