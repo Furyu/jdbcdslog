@@ -43,7 +43,10 @@ object ApplicationBuild extends Build {
       ),
       "junit" % "junit" % "4.9" % "test",
       "hsqldb" % "hsqldb" % "1.8.0.10" % "test",
-      "com.novocode" % "junit-interface" % "0.10-M2" % "test"
+      "com.novocode" % "junit-interface" % "0.10-M2" % "test",
+      "org.scalaquery" % "scalaquery_2.9.0-1" % "0.9.5" % "test",
+      "org.specs2" %% "specs2" % "1.9" % "test",
+      "mysql" % "mysql-connector-java" % "5.1.18"
     )
   )
 
@@ -64,11 +67,33 @@ object ApplicationBuild extends Build {
     ),
     libraryDependencies ++= Seq(
       "org.fluentd" % "fluent-logger" % "0.2.4",
-      "org.specs2" %% "specs2" % "1.9" % "test",
+      "com.github.furyu.scalasqlparser" % "scala-sql-parser_2.9.2" % "0.1",
       "org.mockito" % "mockito-all" % "1.9.0" % "test",
-      "net.databinder" %% "dispatch-json" % "0.8.5" % "test"
+      "net.databinder" %% "dispatch-json" % "0.8.5" % "test",
+      "org.scalaquery" % "scalaquery_2.9.0-1" % "0.9.5" % "test",
+      "org.specs2" %% "specs2" % "1.9" % "test",
+      "mysql" % "mysql-connector-java" % "5.1.18",
+      "org.slf4j" % "slf4j-api" % "1.5.10" ,
+      "org.slf4j" % "slf4j-log4j12" % "1.5.10" % "test" exclude(
+        "javax.jms", "jms"
+        ) exclude(
+        "javax.mail" , "mail"
+        ) exclude(
+        "com.sun.jdmk", "jmxtools"
+        ) exclude(
+        "com.sun.jmx", "jmxri"
+        ),
+      "log4j" % "log4j" % "1.2.14" % "test" exclude(
+        "javax.jms", "jms"
+        ) exclude(
+        "javax.mail" , "mail"
+        ) exclude(
+        "com.sun.jdmk", "jmxtools"
+        ) exclude(
+        "com.sun.jmx", "jmxri"
+        )
     )
-  )
+  ) dependsOn (core)
   
 
 //  lazy val play2 = PlayProject("tracker-sample", path = file("tracker/sample"), mainLang = SCALA).dependsOn(core, slf4j)

@@ -1,5 +1,7 @@
 package org.jdbcdslog;
 
+import org.jdbcdslog.plugin.EventHandlerAPI;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
@@ -23,6 +25,53 @@ public class PreparedStatementLoggingHandler implements InvocationHandler {
     public PreparedStatementLoggingHandler(PreparedStatement ps, String sql) {
         target = ps;
         this.sql = sql;
+    }
+
+    protected String dumpedSql()
+    {
+        StringBuffer dumpSql = new StringBuffer();
+        int lastPos = 0;
+        int Qpos = sql.indexOf('?', lastPos);  // find position of first question mark
+        int argIdx = 1;
+        String arg;
+
+        while (Qpos != -1)
+        {
+            // get stored argument
+            synchronized (parameters)
+            {
+                try
+                {
+                    Object obj = parameters.get(new Integer(argIdx));
+                    if (obj != null) {
+                        arg = ConfigurationParameters.rdbmsSpecifics.formatParameter(obj);
+                    } else {
+                        arg = "?";
+                    }
+                }
+                catch (IndexOutOfBoundsException e)
+                {
+                    arg = "?";
+                }
+            }
+            if (arg == null)
+            {
+                arg = "?";
+            }
+
+            argIdx++;
+
+            dumpSql.append(sql.substring(lastPos, Qpos));  // dump segment of sql up to question mark.
+            lastPos = Qpos + 1;
+            Qpos = sql.indexOf('?', lastPos);
+            dumpSql.append(arg);
+        }
+        if (lastPos < sql.length())
+        {
+            dumpSql.append(sql.substring(lastPos, sql.length()));  // dump last segment
+        }
+
+        return dumpSql.toString();
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -50,6 +99,8 @@ public class PreparedStatementLoggingHandler implements InvocationHandler {
                 }
 
                 StatementLogger.info(sb.toString());
+
+                EventHandlerAPI.preparedStatement(dumpedSql(), parameters, time);
 
                 if (time >= ConfigurationParameters.slowQueryThreshold) {
                     SlowQueryLogger.info(sb.toString());

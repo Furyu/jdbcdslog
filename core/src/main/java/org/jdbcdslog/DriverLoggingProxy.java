@@ -19,6 +19,7 @@ public class DriverLoggingProxy implements Driver {
         try {
             DriverManager.registerDriver(new DriverLoggingProxy());
         } catch (Exception exception) {
+//            throw new RuntimeException(exception);
             ConnectionLogger.error(exception.getMessage(), exception);
         }
     }

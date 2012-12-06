@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.jdbcdslog.plugin.StdoutEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,7 @@ public class ConfigurationParameters {
     static Boolean showTime = false;
     static boolean printStackTrace = false;
     static RdbmsSpecifics rdbmsSpecifics = new OracleRdbmsSpecifics(); // oracle is default db.
+    static Class pluginClass = StdoutEventHandler.class;
 
     static {
         ClassLoader loader = ConfigurationParameters.class.getClassLoader();
@@ -33,6 +35,7 @@ public class ConfigurationParameters {
             initPrintStackTrace();
             initShowTime();
             initRdbmsSpecifics();
+            initPluginSpecifics();
 
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -88,6 +91,17 @@ public class ConfigurationParameters {
             rdbmsSpecifics = new SqlServerRdbmsSpecifics();
         }
     }
+
+    private static void initPluginSpecifics() {
+        String pluginClassName = props.getProperty("jdbcdslog.pluginClassName");
+        try {
+            pluginClass = Class.forName(pluginClassName);
+        } catch (ClassNotFoundException e) {
+            logger.warn("The class '" + pluginClassName +
+                    "'specified in the property 'jdbcdslog.pluginClassName' does not exist." +
+                    "Falling back to the default 'org.jdbcdslog.plugin.Sl4jPlugin'.", e);
+        }
+    }
     /* init parameters end. */
 
     public static void setLogText(boolean alogText) {
@@ -101,6 +115,14 @@ public class ConfigurationParameters {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     *
+     * @return not null
+     */
+    public static Class getPluginClass() {
+        return pluginClass;
     }
 
 }

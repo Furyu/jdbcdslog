@@ -21,6 +21,6 @@ public class ConnectionPoolDataSourceProxy extends DataSourceProxyBase implement
 
     @Override
     public Object unwrap(Class iface) throws SQLException {
-        return super.unwrap(iface);    //To change body of overridden methods use File | Settings | File Templates.
+        return super.unwrap(iface);
     }
 }
