@@ -87,20 +87,25 @@ object DefaultWrites {
     }
   }
 
-  // sql expr writes
-
   implicit object SqlAggWrites extends JavaMapWrites[SqlAgg] {
-    def writes(a: SqlAgg)= {
-      // TODO
-      // AggCall
-      // Avg
-      // CountExpr
-      // CountStart
-      // GroupConcat
-      // Max
-      // Min
-      // Sum
-      null
+    import format.agg._
+    def writes(a: SqlAgg): DefaultWrites.Fluent = a match {
+      case ac: AggCall =>
+        implicitly[JavaMapWrites[AggCall]].writes(ac)
+      case a: Avg =>
+        implicitly[JavaMapWrites[Avg]].writes(a)
+      case ce: CountExpr =>
+        implicitly[JavaMapWrites[CountExpr]].writes(ce)
+      case cs: CountStar =>
+        implicitly[JavaMapWrites[CountStar]].writes(cs)
+      case gc: GroupConcat =>
+        implicitly[JavaMapWrites[GroupConcat]].writes(gc)
+      case m: Max =>
+        implicitly[JavaMapWrites[Max]].writes(m)
+      case m: Min =>
+        implicitly[JavaMapWrites[Min]].writes(m)
+      case s: Sum =>
+        implicitly[JavaMapWrites[Sum]].writes(s)
     }
   }
 
