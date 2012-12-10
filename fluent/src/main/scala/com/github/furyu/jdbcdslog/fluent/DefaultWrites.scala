@@ -42,48 +42,12 @@ object DefaultWrites {
   }
 
   class SeqWrites[A](implicit writes: JavaMapWrites[A]) extends JavaMapWrites[Seq[A]] {
-    import DefaultWrites.{CaseExprCaseWrites}
     def writes(nodes: Seq[A]) = {
       val ary = new util.ArrayList[Fluent]()
       nodes.foreach { node =>
         ary.add(writes.writes(node))
       }
       ary
-    }
-  }
-
-  implicit object CaseExprCaseWrites extends JavaMapWrites[CaseExprCase] {
-    def writes(a: CaseExprCase) = {
-      val CaseExprCase(cond, expr, _) = a
-      val data = new util.HashMap[String, Fluent]()
-      data.put("cond", SqlExprWrites.writes(cond))
-      data.put("expr", SqlExprWrites.writes(expr))
-      data
-    }
-  }
-
-  implicit object SeqCaseExprCaseWrites extends SeqWrites[CaseExprCase]
-
-  implicit object CaseExprWrites extends JavaMapWrites[CaseExpr] {
-    def writes(a: CaseExpr) = {
-      val data = new util.HashMap[String, Fluent]()
-      val CaseExpr(expr, cases, default, _) = a
-      data.put("expr", SqlExprWrites.writes(expr))
-      data.put("cases", implicitly[JavaMapWrites[Seq[CaseExprCase]]].writes(cases))
-      data
-    }
-  }
-
-  implicit object CaseWhenExprWrites extends JavaMapWrites[CaseWhenExpr] {
-    def writes(a: CaseWhenExpr): DefaultWrites.Fluent = {
-      val data = new util.HashMap[String, Fluent]()
-      val CaseWhenExpr(cases, expr, _) = a
-
-      data.put("cases", implicitly[JavaMapWrites[Seq[CaseExprCase]]].writes(cases))
-      expr.foreach { e =>
-        data.put("expr", SqlExprWrites.writes(e))
-      }
-      data
     }
   }
 
@@ -143,28 +107,6 @@ object DefaultWrites {
     }
   }
 
-  implicit object ExistsWrites extends JavaMapWrites[Exists] {
-    def writes(a: Exists) = {
-      val Exists(Subselect(select, _), _) = a
-      // TODO
-      null
-    }
-  }
-
-  implicit object InWrites extends JavaMapWrites[In] {
-    def writes(a: In) = {
-      // TODO
-      null
-    }
-  }
-
-  implicit object Unopwrites extends JavaMapWrites[Unop] {
-    def writes(unop: Unop) = {
-      // TODO
-      null
-    }
-  }
-
   implicit object ColumnSymbolWrites extends JavaMapWrites[ColumnSymbol] {
     def writes(a: ColumnSymbol) = {
       val ColumnSymbol(relation, column, _) = a
@@ -198,60 +140,32 @@ object DefaultWrites {
     }
   }
 
-  implicit object FieldIdentWrites extends JavaMapWrites[FieldIdent] {
-    def writes(fi: FieldIdent) = {
-      val FieldIdent(qualifier, name, symbol, _) = fi
-      val data = new util.HashMap[String,Any]()
-      qualifier.foreach { q =>
-        data.put("qualifier", q)
-      }
-      data.put("name", name)
-      data.put("symbol", SymbolWrites.writes(symbol))
-      data
-    }
-  }
-
   implicit object SqlExprWrites extends JavaMapWrites[SqlExpr] {
+    import format.expr._
     def writes(sqlExpr: SqlExpr) = {
       sqlExpr match {
         case binop: Binop =>
           implicitly[JavaMapWrites[Binop]].writes(binop)
         case caseExpr: CaseExpr =>
-//          implicitly[JavaMapWrites[CaseExpr]].writes(caseExpr)
-          // TODO
-          null
+          implicitly[JavaMapWrites[CaseExpr]].writes(caseExpr)
         case caseWhenExpr: CaseWhenExpr =>
-//          implicitly[JavaMapWrites[CaseWhenExpr]].writes(caseWhenExpr)
-          // TODO
-          null
+          implicitly[JavaMapWrites[CaseWhenExpr]].writes(caseWhenExpr)
         case agg: SqlAgg =>
-//          implicitly[JavaMapWrites[SqlAgg]].writes(agg)
-          // TODO
-          null
+          implicitly[JavaMapWrites[SqlAgg]].writes(agg)
         case fun: SqlFunction =>
-//          implicitly[JavaMapWrites[SqlFunction]].writes(fun)
-          // TODO
-          null
+          implicitly[JavaMapWrites[SqlFunction]].writes(fun)
         case lit: LiteralExpr =>
           implicitly[JavaMapWrites[LiteralExpr]].writes(lit)
         case ex: Exists =>
-//          implicitly[JavaMapWrites[Exists]].writes(ex)
-          // TODO
-          null
+          implicitly[JavaMapWrites[Exists]].writes(ex)
         case in: In =>
-//          implicitly[JavaMapWrites[In]].writes(in)
-          // TODO
-          null
+          implicitly[JavaMapWrites[In]].writes(in)
         case un: Unop =>
-//          implicitly[JavaMapWrites[Unop]].writes(un)
-          // TODO
-          null
+          implicitly[JavaMapWrites[Unop]].writes(un)
         case fi: FieldIdent =>
           implicitly[JavaMapWrites[FieldIdent]].writes(fi)
         case ss: Subselect =>
-//          implicitly[JavaMapWrites[Subselect]].writes(ss)
-          // TODO
-          null
+          implicitly[JavaMapWrites[Subselect]].writes(ss)
       }
     }
   }
@@ -339,12 +253,12 @@ object DefaultWrites {
             projs.add(proj)
             p match {
               case ExprProj(expr, alias, _) =>
-                proj.put("expr", expr.sql)
+                proj.put("expression", expr.sql)
                 alias foreach { a =>
                   proj.put("alias", a)
                 }
               case StarProj(_) =>
-                proj.put("expr", "*")
+                proj.put("expression", "*")
             }
           }
           db.put("projections", projs)
