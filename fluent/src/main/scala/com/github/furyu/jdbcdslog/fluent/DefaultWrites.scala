@@ -15,57 +15,28 @@ object DefaultWrites {
     def writes(a: A): Fluent
   }
 
-  implicit object AddExprWrites extends JavaMapWrites[AddExpr] {
-    def writes(node: AddExpr) = {
-      val fluent = new util.HashMap[String, Fluent]()
-      node match {
-        case node: AddExpr =>
-          val data = new util.HashMap[String, Fluent]()
-          data.put("lhs", SqlExprWrites.writes(node.lhs))
-          data.put("rhs", SqlExprWrites.writes(node.rhs))
-          fluent.put("add", data)
-      }
-      // implicitly[Writes[AddExpr, util.Map[String, AnyRef]].writes(addExpr)
-      fluent
-    }
-
-  }
-
   implicit object BinopWrites extends JavaMapWrites[Binop] {
     import format.binop._
     def writes(binop: Binop) = {
       binop match {
-        case addExpr: AddExpr =>
-          implicitly[JavaMapWrites[AddExpr]].writes(addExpr)
-        case div: Div =>
-//          implicitly[JavaMapWrites[Div]].writes(div)
-          null
-          // TODO
-        case and: And =>
-//          implicitly[JavaMapWrites[And]].writes(and)
-          null
         case eq: Eq =>
           implicitly[JavaMapWrites[Eq]].writes(eq)
-        case ineq: InequalityLike =>
-//          implicitly[JavaMapWrites[InequalityLike]].writes(ineq)
-          null
-        // TODO
-        case like: Like =>
-//          implicitly[JavaMapWrites[Like]].writes(like)
-          null
-        // TODO
-        case mul: Mult =>
-//          implicitly[JavaMapWrites[Mult]].writes(mul)
-          null
-        // TODO
         case neq: Neq =>
-//          implicitly[JavaMapWrites[Neq]].writes(neq)
-          null
-        // TODO
+          implicitly[JavaMapWrites[Neq]].writes(neq)
+        case addExpr: AddExpr =>
+          implicitly[JavaMapWrites[AddExpr]].writes(addExpr)
+        case mul: Mult =>
+          implicitly[JavaMapWrites[Mult]].writes(mul)
+        case div: Div =>
+          implicitly[JavaMapWrites[Div]].writes(div)
+        case and: And =>
+          implicitly[JavaMapWrites[And]].writes(and)
         case or: Or =>
-//          implicitly[JavaMapWrites[Or]].writes(or)
-          null
-        // TODO
+          implicitly[JavaMapWrites[Or]].writes(or)
+        case like: Like =>
+          implicitly[JavaMapWrites[Like]].writes(like)
+        case ineqLike: InequalityLike =>
+          implicitly[JavaMapWrites[InequalityLike]].writes(ineqLike)
       }
     }
   }
