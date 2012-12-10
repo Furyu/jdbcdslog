@@ -8,4 +8,8 @@ public class EventHandlerAPI {
     public static void preparedStatement(String sql, Map parameters, long time) {
         plugged.preparedStatement(sql, parameters, time);
     }
+
+    public static EventHandler getEventHandler() {
+        return plugged;
+    }
 }

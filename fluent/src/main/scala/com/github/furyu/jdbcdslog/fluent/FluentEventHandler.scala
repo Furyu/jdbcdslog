@@ -5,52 +5,32 @@ import java.util
 import org.fluentd.logger.FluentLogger
 import com.github.stephentu.scalasqlparser._
 import scala.util.DynamicVariable
-
-trait Context {
-  def toMap: Map[String, AnyRef]
-}
-
-object SampleContext extends Context {
-  def toMap = Map(
-    "a" -> 1.asInstanceOf[AnyRef],
-    "b" -> Map(
-      "c" -> 2.asInstanceOf[AnyRef]
-    )
-  )
-}
+import annotation.tailrec
 
 class FluentEventHandler extends EventHandler {
+
+  import DefaultWrites._
+
   val currentContext: DynamicVariable[Option[Context]] = new DynamicVariable(None)
 
   val logger = FluentLogger.getLogger("debug.test")
   val parser = new SQLParser()
 
+  def withContext[T](c: Context)(b: => T): T =
+    currentContext.withValue(Some(c))(b)
+
   def preparedStatement(sql: String, parameters: util.Map[_, _], time: Long) {
-    currentContext.value = Some(SampleContext)
     val label = "default"
     val data = new util.HashMap[String, AnyRef]()
     val db = new util.HashMap[String, AnyRef]()
     data.put("db", db)
-    parser.parse(sql).map { stmt =>
-      stmt match {
-        case InsertStmt(tableName, insRow, _) =>
-          db.put("command", "insert")
-          db.put("table", tableName)
-          db.put("timestamp", new java.util.Date().getTime.asInstanceOf[AnyRef])
-          val params = new util.HashMap[String, AnyRef]()
-          db.put("params", params)
-          insRow match {
-            case com.github.stephentu.scalasqlparser.Set(assigns, _) =>
-              assigns.foreach { assign =>
-                params.put(assign.lhs.sql, assign.rhs.sql)
-              }
-            case com.github.stephentu.scalasqlparser.Values(values, _) =>
-              values.foreach { value =>
-                params.put("colNameFor" + value, value.sql)
-              }
-          }
+    val stmt = parser.parse(sql).map(implicitly[JavaMapWrites[Stmt]].writes).map { stmt =>
+      import collection.JavaConverters._
+      for ((k,v) <- stmt.asInstanceOf[util.Map[String, AnyRef]].asScala) {
+        db.put(k, v)
       }
     }
+    data.put("timing", time.asInstanceOf[AnyRef])
     currentContext.value.foreach { context =>
       context.toMap.foreach {
         case (k, v: Map[_, _]) =>

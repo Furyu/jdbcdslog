@@ -49,6 +49,7 @@ object FluentEventHandlerSpec extends Specification {
 
       db.withSession { implicit session: Session =>
         Posts.insert(Post(1L, "one"))
+        Posts.insert(Post(2L, "two"))
       }
 
       db.withSession { implicit session: Session =>
@@ -59,6 +60,18 @@ object FluentEventHandlerSpec extends Specification {
         } yield p.title
 
         q.update("one-modified")
+
+        case class MyContext(data: Map[String, AnyRef]) extends com.github.furyu.jdbcdslog.fluent.Context {
+          def toMap: Map[String, AnyRef] = data
+        }
+
+        org.jdbcdslog.plugin.EventHandlerAPI.getEventHandler match {
+          case handler: FluentEventHandler =>
+            handler.withContext(MyContext(Map("foo" -> Map("bar" -> 1.asInstanceOf[AnyRef])))) {
+              val q2 = for(p <- Posts if p.id === 2L) yield p.title
+              q2.firstOption
+            }
+        }
       }
 
       success
