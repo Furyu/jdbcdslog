@@ -1,7 +1,7 @@
 package com.github.furyu.jdbcdslog.fluent
 
-import com.github.furyu.jdbcdslog.fluent.DefaultWrites.{SeqWrites, SqlExprWrites, JavaMapWrites}
-import com.github.stephentu.scalasqlparser.SqlExpr
+import com.github.furyu.jdbcdslog.fluent.DefaultWrites.{StmtWrites, SeqWrites, SqlExprWrites, JavaMapWrites}
+import com.github.stephentu.scalasqlparser.{Stmt, SqlExpr}
 
 package object format {
 
@@ -26,6 +26,8 @@ package object format {
     data match {
       case expr: SqlExpr =>
         SqlExprWrites.writes(expr)
+      case stmt: Stmt =>
+        StmtWrites.writes(stmt)
       case seq: Seq[_] =>
         seqExprWrites.writes(seq.asInstanceOf[Seq[SqlExpr]])
       case any: Any =>

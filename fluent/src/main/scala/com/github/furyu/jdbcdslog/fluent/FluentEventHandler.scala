@@ -39,6 +39,7 @@ class FluentEventHandler extends EventHandler {
           data.put(k, v)
       }
     }
+    println("data=" + data)
     logger.log(label, data)
   }
 

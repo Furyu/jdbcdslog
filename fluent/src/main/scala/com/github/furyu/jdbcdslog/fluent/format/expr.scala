@@ -101,6 +101,8 @@ object expr {
       data.put("name", name)
       data.put("symbol", SymbolWrites.writes(symbol))
       data
+
+      expression("$field", data)
     }
   }
 

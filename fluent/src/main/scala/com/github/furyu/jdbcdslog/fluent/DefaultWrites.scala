@@ -223,6 +223,12 @@ object DefaultWrites {
     }
   }
 
+  val assignWrites = new JavaMapWrites[Assign] {
+    def writes(a: Assign): DefaultWrites.Fluent = {
+      format.expression("$assign", format.obj("lhs" -> a.lhs, "rhs" -> a.rhs))
+    }
+  }
+
   implicit object StmtWrites extends JavaMapWrites[Stmt] {
     def consumeRelations(db: util.Map[String, Fluent], relations: Seq[SqlRelation]) {
       val rels = new util.ArrayList[Fluent]()
@@ -275,12 +281,15 @@ object DefaultWrites {
           db.put("assigns", params)
           insRow match {
             case com.github.stephentu.scalasqlparser.Set(assigns, _) =>
+              val set = new util.ArrayList[Any]()
+              params.put("$set", set)
               assigns.foreach { assign =>
-                params.put(assign.lhs.sql, assign.rhs.sql)
+                set.add(assignWrites.writes(assign))
               }
             case com.github.stephentu.scalasqlparser.Values(values, _) =>
+              val vs = new util.ArrayList[Any]()
               values.foreach { value =>
-                params.put("colNameFor" + value, value.sql)
+                vs.add(SqlExprWrites.writes(value))
               }
           }
         case UpdateStmt(relations, assigns, filter, _) =>
@@ -290,10 +299,10 @@ object DefaultWrites {
           consumeRelations(db, relations)
           consumeWhereClause(db, filter)
 
-          val as = new util.HashMap[String, Fluent]()
+          val as = new util.ArrayList[Any]()
           db.put("assigns", as)
-          assigns.foreach { case Assign(lhs, rhs, _) =>
-            as.put(lhs.sql, rhs.sql)
+          assigns.foreach { case a: Assign =>
+            as.add(assignWrites.writes(a))
           }
       }
       db
