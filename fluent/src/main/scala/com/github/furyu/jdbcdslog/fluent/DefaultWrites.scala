@@ -9,7 +9,7 @@ object DefaultWrites {
     def writes(a: A): B
   }
 
-  type Fluent = AnyRef
+  type Fluent = Any
 
   trait JavaMapWrites[A] extends Writes[A, Fluent]{
     def writes(a: A): Fluent
@@ -17,10 +17,10 @@ object DefaultWrites {
 
   implicit object AddExprWrites extends JavaMapWrites[AddExpr] {
     def writes(node: AddExpr) = {
-      val fluent = new util.HashMap[String, AnyRef]()
+      val fluent = new util.HashMap[String, Fluent]()
       node match {
         case node: AddExpr =>
-          val data = new util.HashMap[String, AnyRef]()
+          val data = new util.HashMap[String, Fluent]()
           data.put("lhs", SqlExprWrites.writes(node.lhs))
           data.put("rhs", SqlExprWrites.writes(node.rhs))
           fluent.put("add", data)
@@ -32,10 +32,40 @@ object DefaultWrites {
   }
 
   implicit object BinopWrites extends JavaMapWrites[Binop] {
+    import format.binop._
     def writes(binop: Binop) = {
       binop match {
         case addExpr: AddExpr =>
           implicitly[JavaMapWrites[AddExpr]].writes(addExpr)
+        case div: Div =>
+//          implicitly[JavaMapWrites[Div]].writes(div)
+          null
+          // TODO
+        case and: And =>
+//          implicitly[JavaMapWrites[And]].writes(and)
+          null
+        case eq: Eq =>
+          implicitly[JavaMapWrites[Eq]].writes(eq)
+        case ineq: InequalityLike =>
+//          implicitly[JavaMapWrites[InequalityLike]].writes(ineq)
+          null
+        // TODO
+        case like: Like =>
+//          implicitly[JavaMapWrites[Like]].writes(like)
+          null
+        // TODO
+        case mul: Mult =>
+//          implicitly[JavaMapWrites[Mult]].writes(mul)
+          null
+        // TODO
+        case neq: Neq =>
+//          implicitly[JavaMapWrites[Neq]].writes(neq)
+          null
+        // TODO
+        case or: Or =>
+//          implicitly[JavaMapWrites[Or]].writes(or)
+          null
+        // TODO
       }
     }
   }
@@ -43,7 +73,7 @@ object DefaultWrites {
   class SeqWrites[A](implicit writes: JavaMapWrites[A]) extends JavaMapWrites[Seq[A]] {
     import DefaultWrites.{CaseExprCaseWrites}
     def writes(nodes: Seq[A]) = {
-      val ary = new util.ArrayList[AnyRef]()
+      val ary = new util.ArrayList[Fluent]()
       nodes.foreach { node =>
         ary.add(writes.writes(node))
       }
@@ -54,7 +84,7 @@ object DefaultWrites {
   implicit object CaseExprCaseWrites extends JavaMapWrites[CaseExprCase] {
     def writes(a: CaseExprCase) = {
       val CaseExprCase(cond, expr, _) = a
-      val data = new util.HashMap[String, AnyRef]()
+      val data = new util.HashMap[String, Fluent]()
       data.put("cond", SqlExprWrites.writes(cond))
       data.put("expr", SqlExprWrites.writes(expr))
       data
@@ -65,7 +95,7 @@ object DefaultWrites {
 
   implicit object CaseExprWrites extends JavaMapWrites[CaseExpr] {
     def writes(a: CaseExpr) = {
-      val data = new util.HashMap[String, AnyRef]()
+      val data = new util.HashMap[String, Fluent]()
       val CaseExpr(expr, cases, default, _) = a
       data.put("expr", SqlExprWrites.writes(expr))
       data.put("cases", implicitly[JavaMapWrites[Seq[CaseExprCase]]].writes(cases))
@@ -75,7 +105,7 @@ object DefaultWrites {
 
   implicit object CaseWhenExprWrites extends JavaMapWrites[CaseWhenExpr] {
     def writes(a: CaseWhenExpr): DefaultWrites.Fluent = {
-      val data = new util.HashMap[String, AnyRef]()
+      val data = new util.HashMap[String, Fluent]()
       val CaseWhenExpr(cases, expr, _) = a
 
       data.put("cases", implicitly[JavaMapWrites[Seq[CaseExprCase]]].writes(cases))
@@ -120,26 +150,21 @@ object DefaultWrites {
   }
 
   implicit object LiteralExprWrites extends JavaMapWrites[LiteralExpr] {
+    import format.literal._
     def writes(a: LiteralExpr) = {
       a match {
-        case DateLiteral(d, _) =>
-          // TODO
-          null
-        case FloatLiteral(v, _) =>
-          // TODO
-          null
-        case IntLiteral(i, _) =>
-          // TODO
-          null
-        case IntervalLiteral(e, unit, _) =>
-          // TODO
-          null
-        case NullLiteral(_) =>
-          // TODO
-          null
-        case StringLiteral(v, _) =>
-          // TODO
-          null
+        case d: DateLiteral =>
+          implicitly[JavaMapWrites[DateLiteral]].writes(d)
+        case f: FloatLiteral =>
+          implicitly[JavaMapWrites[FloatLiteral]].writes(f)
+        case i: IntLiteral =>
+          implicitly[JavaMapWrites[IntLiteral]].writes(i)
+        case i: IntervalLiteral =>
+          implicitly[JavaMapWrites[IntervalLiteral]].writes(i)
+        case n: NullLiteral =>
+          implicitly[JavaMapWrites[NullLiteral]].writes(n)
+        case s: StringLiteral =>
+          implicitly[JavaMapWrites[StringLiteral]].writes(s)
       }
     }
   }
@@ -166,36 +191,93 @@ object DefaultWrites {
     }
   }
 
+  implicit object ColumnSymbolWrites extends JavaMapWrites[ColumnSymbol] {
+    def writes(a: ColumnSymbol) = {
+      val ColumnSymbol(relation, column, _) = a
+      val data = new util.HashMap[String, Any]()
+      data.put("relation", relation)
+      data.put("column", column)
+      data
+    }
+  }
+
+  implicit object ProjectionSymbolWrites extends JavaMapWrites[ProjectionSymbol] {
+    def writes(a: ProjectionSymbol) = {
+      val ProjectionSymbol(name, _) = a
+      val data = new util.HashMap[String, Any]()
+      data.put("name", name)
+      data
+    }
+  }
+
+  implicit object SymbolWrites extends JavaMapWrites[com.github.stephentu.scalasqlparser.Symbol] {
+    def writes(a: Symbol) = {
+      a match {
+        case c: ColumnSymbol =>
+          implicitly[JavaMapWrites[ColumnSymbol]].writes(c)
+        case p: ProjectionSymbol =>
+          implicitly[JavaMapWrites[ProjectionSymbol]].writes(p)
+        case unexpected =>
+          println("Unexpected: " + unexpected)
+          null
+      }
+    }
+  }
+
+  implicit object FieldIdentWrites extends JavaMapWrites[FieldIdent] {
+    def writes(fi: FieldIdent) = {
+      val FieldIdent(qualifier, name, symbol, _) = fi
+      val data = new util.HashMap[String,Any]()
+      qualifier.foreach { q =>
+        data.put("qualifier", q)
+      }
+      data.put("name", name)
+      data.put("symbol", SymbolWrites.writes(symbol))
+      data
+    }
+  }
+
   implicit object SqlExprWrites extends JavaMapWrites[SqlExpr] {
     def writes(sqlExpr: SqlExpr) = {
       sqlExpr match {
         case binop: Binop =>
           implicitly[JavaMapWrites[Binop]].writes(binop)
         case caseExpr: CaseExpr =>
-          implicitly[JavaMapWrites[CaseExpr]].writes(caseExpr)
+//          implicitly[JavaMapWrites[CaseExpr]].writes(caseExpr)
+          // TODO
+          null
         case caseWhenExpr: CaseWhenExpr =>
-          implicitly[JavaMapWrites[CaseWhenExpr]].writes(caseWhenExpr)
+//          implicitly[JavaMapWrites[CaseWhenExpr]].writes(caseWhenExpr)
+          // TODO
+          null
         case agg: SqlAgg =>
-          implicitly[JavaMapWrites[SqlAgg]].writes(agg)
+//          implicitly[JavaMapWrites[SqlAgg]].writes(agg)
+          // TODO
+          null
         case fun: SqlFunction =>
-          implicitly[JavaMapWrites[SqlFunction]].writes(fun)
+//          implicitly[JavaMapWrites[SqlFunction]].writes(fun)
+          // TODO
+          null
         case lit: LiteralExpr =>
           implicitly[JavaMapWrites[LiteralExpr]].writes(lit)
         case ex: Exists =>
-          implicitly[JavaMapWrites[Exists]].writes(ex)
+//          implicitly[JavaMapWrites[Exists]].writes(ex)
+          // TODO
+          null
         case in: In =>
-          implicitly[JavaMapWrites[In]].writes(in)
+//          implicitly[JavaMapWrites[In]].writes(in)
+          // TODO
+          null
         case un: Unop =>
-          implicitly[JavaMapWrites[Unop]].writes(un)
-      }
-    }
-  }
-
-  implicit object NodeWrites extends JavaMapWrites[Node] {
-    def writes(node: Node) = {
-      node match {
-        case e: SqlExpr =>
-          implicitly[JavaMapWrites[SqlExpr]].writes(e)
+//          implicitly[JavaMapWrites[Unop]].writes(un)
+          // TODO
+          null
+        case fi: FieldIdent =>
+          implicitly[JavaMapWrites[FieldIdent]].writes(fi)
+        case ss: Subselect =>
+//          implicitly[JavaMapWrites[Subselect]].writes(ss)
+          // TODO
+          null
       }
     }
   }
@@ -209,7 +291,7 @@ object DefaultWrites {
   implicit object JoinRelationWrites extends JavaMapWrites[JoinRelation] {
     def writes(a: JoinRelation) = {
       val JoinRelation(left, right, tpe, clause, _) = a
-      val data = new util.HashMap[String, AnyRef]()
+      val data = new util.HashMap[String, Fluent]()
       data.put("left", SqlRelationWrites.writes(left))
       data.put("right", SqlRelationWrites.writes(right))
       data.put("type", JoinTypeWrites.writes(tpe))
@@ -221,7 +303,7 @@ object DefaultWrites {
   implicit object SubqueryRelationASTWrites extends JavaMapWrites[SubqueryRelationAST] {
     def writes(s: SubqueryRelationAST) = {
       val SubqueryRelationAST(select, alias, _) = s
-      val data = new util.HashMap[String, AnyRef]()
+      val data = new util.HashMap[String, Fluent]()
       data.put("select", StmtWrites.writes(select))
       data.put("alias", alias)
       data
@@ -231,7 +313,7 @@ object DefaultWrites {
   implicit object TableRelationASTWrites extends JavaMapWrites[TableRelationAST] {
     def writes(a: TableRelationAST) = {
       val TableRelationAST(name, alias, _) = a
-      val data = new util.HashMap[String, AnyRef]()
+      val data = new util.HashMap[String, Fluent]()
       data.put("name", name)
       alias.foreach { a =>
         data.put("alias", a)
@@ -254,38 +336,32 @@ object DefaultWrites {
   }
 
   implicit object StmtWrites extends JavaMapWrites[Stmt] {
-    def consumeRelations(db: util.Map[String, AnyRef], relations: Seq[SqlRelation]) {
-      val rels = new util.ArrayList[AnyRef]()
+    def consumeRelations(db: util.Map[String, Fluent], relations: Seq[SqlRelation]) {
+      val rels = new util.ArrayList[Fluent]()
       relations.foreach {
-        case TableRelationAST(name, alias, _) =>
-          val rel = new util.HashMap[String, AnyRef]()
-          rel.put("table", name)
-          alias.foreach { alias =>
-            rel.put("alias", alias)
-          }
-          rels.add(rel)
+        case rel =>
+          rels.add(implicitly[JavaMapWrites[SqlRelation]].writes(rel))
       }
       db.put("relations", rels)
     }
-    def consumeWhereClause(db: util.Map[String, AnyRef], filter: Option[SqlExpr]) {
-      val where = new util.HashMap[String, AnyRef]()
+    def consumeWhereClause(db: util.Map[String, Fluent], filter: Option[SqlExpr]) {
+      val where = new util.ArrayList[Fluent]()
       db.put("where", where)
-      filter.foreach {
-        case Eq(lhs, rhs, _) =>
-          where.put(lhs.sql, rhs.sql)
+      filter.foreach { expr =>
+          where.add(implicitly[JavaMapWrites[SqlExpr]].writes(expr))
       }
     }
 
     def writes(n: Stmt) = {
-      val db = new util.HashMap[String, AnyRef]()
+      val db = new util.HashMap[String, Fluent]()
       n match {
         case SelectStmt(projections, relations, filter, groupBy, orderBy, limit, _) =>
           db.put("command", "select")
-          db.put("timestamp", new java.util.Date().getTime().asInstanceOf[AnyRef])
+          db.put("timestamp", new java.util.Date().getTime().asInstanceOf[Fluent])
 
-          val projs = new util.ArrayList[util.Map[String, AnyRef]]()
+          val projs = new util.ArrayList[util.Map[String, Fluent]]()
           projections.foreach { p =>
-            val proj = new util.HashMap[String, AnyRef]()
+            val proj = new util.HashMap[String, Fluent]()
             projs.add(proj)
             p match {
               case ExprProj(expr, alias, _) =>
@@ -304,10 +380,10 @@ object DefaultWrites {
           consumeWhereClause(db, filter)
         case InsertStmt(tableName, insRow, _) =>
           db.put("command", "insert")
-          db.put("timestamp", new java.util.Date().getTime.asInstanceOf[AnyRef])
+          db.put("timestamp", new java.util.Date().getTime.asInstanceOf[Fluent])
 
           db.put("table", tableName)
-          val params = new util.HashMap[String, AnyRef]()
+          val params = new util.HashMap[String, Fluent]()
           db.put("assigns", params)
           insRow match {
             case com.github.stephentu.scalasqlparser.Set(assigns, _) =>
@@ -321,12 +397,12 @@ object DefaultWrites {
           }
         case UpdateStmt(relations, assigns, filter, _) =>
           db.put("command", "update")
-          db.put("timestamp", new java.util.Date().getTime().asInstanceOf[AnyRef])
+          db.put("timestamp", new java.util.Date().getTime().asInstanceOf[Fluent])
 
           consumeRelations(db, relations)
           consumeWhereClause(db, filter)
 
-          val as = new util.HashMap[String, AnyRef]()
+          val as = new util.HashMap[String, Fluent]()
           db.put("assigns", as)
           assigns.foreach { case Assign(lhs, rhs, _) =>
             as.put(lhs.sql, rhs.sql)
