@@ -110,17 +110,15 @@ object DefaultWrites {
   }
 
   implicit object SqlFunctionWrites extends JavaMapWrites[SqlFunction] {
+    import format.function._
     def writes(a: SqlFunction) = {
       a match {
-        case Extract(expr, what, _) =>
-          // TODO
-          null
-        case FunctionCall(name, args, _) =>
-          // TODO
-          null
-        case Substring(expr, from, length, _) =>
-          // TODO
-          null
+        case e: Extract =>
+          implicitly[JavaMapWrites[Extract]].writes(e)
+        case fc: FunctionCall =>
+          implicitly[JavaMapWrites[FunctionCall]].writes(fc)
+        case s: Substring =>
+          implicitly[JavaMapWrites[Substring]].writes(s)
       }
     }
   }

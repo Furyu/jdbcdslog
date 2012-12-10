@@ -5,19 +5,6 @@ import com.github.furyu.jdbcdslog.fluent.DefaultWrites.{SeqWrites, SqlExprWrites
 
 object agg {
 
-  val seqExprWrites = new SeqWrites[SqlExpr]()
-
-  def consume(data: Any) {
-    data match {
-      case expr: SqlExpr =>
-        SqlExprWrites.writes(expr)
-      case seq: Seq[_] =>
-        seqExprWrites.writes(seq.asInstanceOf[Seq[SqlExpr]])
-      case any: Any =>
-        any
-    }
-  }
-
   def agg(name: String, options: (String, Any)*) = {
     val data = new java.util.HashMap[String, Any]()
     data.put("name", name)
