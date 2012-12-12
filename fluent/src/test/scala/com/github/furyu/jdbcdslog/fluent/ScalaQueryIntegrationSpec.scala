@@ -14,6 +14,7 @@ object ScalaQueryIntegrationSpec extends Specification {
       import org.scalaquery.ql.extended.{ExtendedProfile, ExtendedTable => Table, MySQLDriver}
 
       case class Post(id: Long, title: String)
+      case class Comment(id: Long, postId: Long, body: String)
 
       // Load the driver and execute the static initializer within it.
       Class.forName("org.jdbcdslog.DriverLoggingProxy")
@@ -38,18 +39,33 @@ object ScalaQueryIntegrationSpec extends Specification {
         }
       }
 
+      object Comments extends Table[Comment]("comments") {
+        def id = column[Long]("id")
+        def postId = column[Long]("post_id")
+        def body = column[String]("body")
+
+        def * = id ~ postId ~ body <> (Comment.apply _, Comment.unapply _)
+      }
+
+      val tables = Posts :: Comments :: Nil
+
       db.withSession { implicit session: Session =>
         val tableNames = MTable.getTables.list().map(_.name.name)
         println(tableNames)
-        if (tableNames.contains(Posts.tableName)) {
-          Posts.ddl.drop
-        }
-        Posts.ddl.create
+        for (t <- tables.reverse if tableNames.contains(t.tableName))
+          t.ddl.drop
+      }
+
+      db.withSession { implicit session: Session =>
+        for (t <- tables)
+          t.ddl.create
       }
 
       db.withSession { implicit session: Session =>
         Posts.insert(Post(1L, "one"))
         Posts.insert(Post(2L, "two"))
+        Comments.insert(Comment(1L, 1L, "comment1"))
+        Comments.insert(Comment(2L, 1L, "comment2"))
       }
 
       db.withSession { implicit session: Session =>
@@ -68,7 +84,10 @@ object ScalaQueryIntegrationSpec extends Specification {
         org.jdbcdslog.plugin.EventHandlerAPI.getEventHandler match {
           case handler: FluentEventHandler =>
             handler.withContext(MyContext(Map("foo" -> Map("bar" -> 1.asInstanceOf[AnyRef])))) {
-              val q2 = for(p <- Posts if p.id === 2L) yield p.title
+              val q2 = for {
+                p <- Posts if p.id === 1L || p.id === 2L || p.id === 3L
+                c <- Comments if p.id === c.postId
+              } yield p.title ~ c.body
               q2.firstOption
             }
         }
