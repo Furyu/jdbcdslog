@@ -73,7 +73,6 @@ object ApplicationBuild extends Build {
       "org.scalaquery" % "scalaquery_2.9.0-1" % "0.9.5" % "test",
       "org.specs2" %% "specs2" % "1.9" % "test",
       "mysql" % "mysql-connector-java" % "5.1.18",
-      "org.slf4j" % "slf4j-api" % "1.5.10" ,
       "org.slf4j" % "slf4j-log4j12" % "1.5.10" % "test" exclude(
         "javax.jms", "jms"
         ) exclude(
@@ -94,6 +93,31 @@ object ApplicationBuild extends Build {
         )
     )
   ) dependsOn (core)
+
+  lazy val fluentConsole = Project("fluent-console", base = file("fluent-console")).settings(
+    organization := appOrganization,
+    version := appVersion,
+    libraryDependencies ++= Seq(
+      "org.slf4j" % "slf4j-log4j12" % "1.5.10" exclude(
+        "javax.jms", "jms"
+        ) exclude(
+        "javax.mail" , "mail"
+        ) exclude(
+        "com.sun.jdmk", "jmxtools"
+        ) exclude(
+        "com.sun.jmx", "jmxri"
+        ),
+      "log4j" % "log4j" % "1.2.14" % "test" exclude(
+        "javax.jms", "jms"
+        ) exclude(
+        "javax.mail" , "mail"
+        ) exclude(
+        "com.sun.jdmk", "jmxtools"
+        ) exclude(
+        "com.sun.jmx", "jmxri"
+        )
+    )
+  ) dependsOn (fluent)
   
 
 //  lazy val play2 = PlayProject("tracker-sample", path = file("tracker/sample"), mainLang = SCALA).dependsOn(core, slf4j)
