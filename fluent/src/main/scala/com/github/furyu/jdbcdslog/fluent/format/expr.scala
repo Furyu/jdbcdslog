@@ -38,7 +38,7 @@ object expr {
     }
   }
 
-  implicit val caseWhenExprWrites = writes[CaseWhenExpr] {
+  implicit val caseWhenExprWrites: JavaMapWrites[CaseWhenExpr] = writes[CaseWhenExpr] {
     case CaseWhenExpr(cases, expr, _) =>
       val data = new util.HashMap[String, Fluent]()
       data.put("cases", implicitly[JavaMapWrites[Seq[CaseExprCase]]].writes(cases))
@@ -48,12 +48,12 @@ object expr {
       data
   }
 
-  implicit val existsWrites = writes[Exists] {
+  implicit val existsWrites: JavaMapWrites[Exists] = writes[Exists] {
     case Exists(select, _) =>
       expression("$exists", select)
   }
 
-  implicit val inWrites = writes[In] {
+  implicit val inWrites: JavaMapWrites[In] = writes[In] {
     case In(elem, set, negate, _) =>
       val in = expression("$in", obj("elem" -> elem, "set" -> set))
       if (negate)
@@ -62,22 +62,22 @@ object expr {
         in
   }
 
-  implicit val unaryPlusWrites = writes[UnaryPlus] {
+  implicit val unaryPlusWrites: JavaMapWrites[UnaryPlus] = writes[UnaryPlus] {
     case UnaryPlus(ex, _) =>
       expression("$unaryPlus", ex)
   }
 
-  implicit val unaryMinusWrites = writes[UnaryMinus] {
+  implicit val unaryMinusWrites: JavaMapWrites[UnaryMinus] = writes[UnaryMinus] {
     case UnaryMinus(ex, _) =>
       expression("$unaryMinus", ex)
   }
 
-  implicit val notWrites = writes[Not] {
+  implicit val notWrites: JavaMapWrites[Not] = writes[Not] {
     case Not(ex, _) =>
       expression("$not", ex)
   }
 
-  implicit val unopWrites = writes[Unop] {
+  implicit val unopWrites: JavaMapWrites[Unop] = writes[Unop] {
     case p: UnaryPlus =>
       implicitly[JavaMapWrites[UnaryPlus]].writes(p)
     case m: UnaryMinus =>
@@ -93,16 +93,28 @@ object expr {
 
   implicit object FieldIdentWrites extends JavaMapWrites[FieldIdent] {
     def writes(fi: FieldIdent) = {
-      val FieldIdent(qualifier, name, symbol, _) = fi
-      val data = new util.HashMap[String,Any]()
-      qualifier.foreach { q =>
-        data.put("qualifier", q)
+      val FieldIdent(explicitQualifier, name, symbol, _) = fi
+      val relationName = symbol match {
+        case ColumnSymbol(rel, col, _) =>
+          println("rel=" + rel + ", col=" + col)
+          Some(rel)
+        case _ =>
+          throw new RuntimeException("Unexpected symbol found: " + symbol)
       }
-      data.put("name", name)
-      data.put("symbol", SymbolWrites.writes(symbol))
-      data
-
-      expression("$field", data)
+      val qualifier = explicitQualifier.orElse(relationName)
+      val tableName = for {
+        q <- qualifier
+        ctx <- Option(fi.ctx)
+        n <- ctx.relations.collectFirst {
+          case (relName, TableRelation(tblName)) if relName == q =>
+            tblName
+          }
+      } yield n
+      if (fi.ctx != null) {
+        println(fi.ctx.relations)
+      }
+      val field = tableName.orElse(qualifier).map("`" + _ + "`.").getOrElse("") + "`" + name + "`"
+      expression("$field", field)
     }
   }
 

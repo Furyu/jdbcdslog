@@ -141,8 +141,8 @@ object DefaultWrites {
   }
 
   implicit object SqlExprWrites extends JavaMapWrites[SqlExpr] {
-    import format.expr._
     def writes(sqlExpr: SqlExpr) = {
+      import format.expr._
       sqlExpr match {
         case binop: Binop =>
           implicitly[JavaMapWrites[Binop]].writes(binop)
@@ -224,8 +224,17 @@ object DefaultWrites {
   }
 
   val assignWrites = new JavaMapWrites[Assign] {
+    import format.expr._
+    val fieldIdentWrites = implicitly[JavaMapWrites[FieldIdent]]
+    val exprWrites = implicitly[JavaMapWrites[SqlExpr]]
     def writes(a: Assign): DefaultWrites.Fluent = {
-      format.expression("$assign", format.obj("lhs" -> a.lhs, "rhs" -> a.rhs))
+      format.expression(
+        "$assign",
+        format.obj(
+          "lhs" -> fieldIdentWrites.writes(a.lhs),
+          "rhs" -> exprWrites.writes(a.rhs)
+        )
+      )
     }
   }
 
@@ -253,19 +262,10 @@ object DefaultWrites {
           db.put("command", "select")
           db.put("timestamp", new java.util.Date().getTime().asInstanceOf[Fluent])
 
-          val projs = new util.ArrayList[util.Map[String, Fluent]]()
+          val projs = new util.ArrayList[Fluent]()
           projections.foreach { p =>
-            val proj = new util.HashMap[String, Fluent]()
-            projs.add(proj)
-            p match {
-              case ExprProj(expr, alias, _) =>
-                proj.put("expression", expr.sql)
-                alias foreach { a =>
-                  proj.put("alias", a)
-                }
-              case StarProj(_) =>
-                proj.put("expression", "*")
-            }
+            import format.proj._
+            projs.add(implicitly[JavaMapWrites[SqlProj]].writes(p))
           }
           db.put("projections", projs)
           relations foreach { r =>
@@ -277,21 +277,8 @@ object DefaultWrites {
           db.put("timestamp", new java.util.Date().getTime.asInstanceOf[Fluent])
 
           db.put("table", tableName)
-          val params = new util.HashMap[String, Fluent]()
-          db.put("assigns", params)
-          insRow match {
-            case com.github.stephentu.scalasqlparser.Set(assigns, _) =>
-              val set = new util.ArrayList[Any]()
-              params.put("$set", set)
-              assigns.foreach { assign =>
-                set.add(assignWrites.writes(assign))
-              }
-            case com.github.stephentu.scalasqlparser.Values(values, _) =>
-              val vs = new util.ArrayList[Any]()
-              values.foreach { value =>
-                vs.add(SqlExprWrites.writes(value))
-              }
-          }
+          import format.insrow._
+          db.put("assigns", implicitly[JavaMapWrites[InsRow]].writes(insRow))
         case UpdateStmt(relations, assigns, filter, _) =>
           db.put("command", "update")
           db.put("timestamp", new java.util.Date().getTime().asInstanceOf[Fluent])

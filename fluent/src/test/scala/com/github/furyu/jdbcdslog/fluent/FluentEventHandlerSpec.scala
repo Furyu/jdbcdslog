@@ -9,15 +9,15 @@ object FluentEventHandlerSpec extends Specification {
 
       val handler = new FluentEventHandler
 
-      handler.preparedStatement(
-        """
-          |update posts p
-          |set p.value = (1 + 2) * 3 / 4
-          |where exists (
-          |select * from comments c
-          |where p.id = c.post_id
-          |)
-        """.stripMargin, null, 123456789L)
+//      handler.preparedStatement(
+//        """
+//          |update posts p
+//          |set p.value = (1 + 2) * 3 / 4
+//          |where exists (
+//          |select * from comments c
+//          |where p.id = c.post_id
+//          |)
+//        """.stripMargin, null, 123456789L)
 
       success
     }
