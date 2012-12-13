@@ -4,8 +4,10 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.TreeMap;
 
+import org.jdbcdslog.plugin.EventHandlerAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +54,8 @@ public class CallableStatementLoggingHandler extends PreparedStatementLoggingHan
                 }
 
                 StatementLogger.info(s.toString());
+
+                EventHandlerAPI.statement((Statement) proxy, parameters, time, dumpedSql());
 
                 if (time >= ConfigurationParameters.slowQueryThreshold) {
                     SlowQueryLogger.info(s.toString());

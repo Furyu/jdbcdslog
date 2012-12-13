@@ -100,7 +100,7 @@ public class PreparedStatementLoggingHandler implements InvocationHandler {
 
                 StatementLogger.info(sb.toString());
 
-                EventHandlerAPI.preparedStatement((PreparedStatement)proxy, parameters, time, dumpedSql());
+                EventHandlerAPI.statement((PreparedStatement) proxy, parameters, time, dumpedSql());
 
                 if (time >= ConfigurationParameters.slowQueryThreshold) {
                     SlowQueryLogger.info(sb.toString());

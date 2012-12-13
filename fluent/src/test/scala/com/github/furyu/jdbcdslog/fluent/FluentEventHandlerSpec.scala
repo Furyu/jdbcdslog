@@ -9,7 +9,7 @@ object FluentEventHandlerSpec extends Specification {
 
       val handler = new FluentEventHandler
 
-//      handler.preparedStatement(
+//      handler.statement(
 //        """
 //          |update posts p
 //          |set p.value = (1 + 2) * 3 / 4

@@ -1,20 +1,26 @@
 package org.jdbcdslog;
 
+import org.jdbcdslog.plugin.EventHandlerAPI;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class StatementLoggingHandler implements InvocationHandler {
     Object targetStatement = null;
 
+    String sql = null;
+
     @SuppressWarnings("rawtypes")
     static List executeMethods = Arrays.asList(new String[] { "addBatch", "execute", "executeQuery", "executeUpdate" });
 
-    public StatementLoggingHandler(Statement statement) {
+    public StatementLoggingHandler(Statement statement, String sql) {
         targetStatement = statement;
+        this.sql = sql;
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -37,6 +43,8 @@ public class StatementLoggingHandler implements InvocationHandler {
                 }
 
                 StatementLogger.info(sb.toString());
+
+                EventHandlerAPI.statement((Statement) proxy, new HashMap(), time, sql);
 
                 if (time >= ConfigurationParameters.slowQueryThreshold) {
                     SlowQueryLogger.info(sb.toString());

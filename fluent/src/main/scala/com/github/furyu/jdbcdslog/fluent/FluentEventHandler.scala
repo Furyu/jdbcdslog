@@ -6,7 +6,7 @@ import org.fluentd.logger.FluentLogger
 import com.github.stephentu.scalasqlparser._
 import scala.util.DynamicVariable
 import annotation.tailrec
-import java.sql.PreparedStatement
+import java.sql.{Statement, PreparedStatement}
 
 class FluentEventHandler extends EventHandler {
 
@@ -21,7 +21,7 @@ class FluentEventHandler extends EventHandler {
   val schemas = new scala.collection.mutable.HashMap[String, MySQLSchema]
     with scala.collection.mutable.SynchronizedMap[String, MySQLSchema]
 
-  private def schemaFor(prepStmt: PreparedStatement) = {
+  private def schemaFor(prepStmt: Statement) = {
     val url = prepStmt.getConnection.getMetaData.getURL
     schemas.getOrElseUpdate(
       url,
@@ -37,7 +37,7 @@ class FluentEventHandler extends EventHandler {
   def withContext[T](c: Context)(b: => T): T =
     currentContext.withValue(Some(c))(b)
 
-  def preparedStatement(prepStmt: PreparedStatement, sql: String, parameters: util.Map[_, _], time: Long) {
+  def statement(prepStmt: Statement, sql: String, parameters: util.Map[_, _], time: Long) {
     val label = "default"
     val data = new util.HashMap[String, AnyRef]()
     val db = new util.HashMap[String, AnyRef]()
