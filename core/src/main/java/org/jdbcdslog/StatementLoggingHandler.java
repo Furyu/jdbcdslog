@@ -18,7 +18,7 @@ public class StatementLoggingHandler implements InvocationHandler {
     @SuppressWarnings("rawtypes")
     static List executeMethods = Arrays.asList(new String[] { "addBatch", "execute", "executeQuery", "executeUpdate" });
 
-    public StatementLoggingHandler(Statement statement, String sql) {
+    public StatementLoggingHandler(Statement statement) {
         targetStatement = statement;
         this.sql = sql;
     }
@@ -44,7 +44,7 @@ public class StatementLoggingHandler implements InvocationHandler {
 
                 StatementLogger.info(sb.toString());
 
-                EventHandlerAPI.statement((Statement) proxy, new HashMap(), time, sql);
+                EventHandlerAPI.statement((Statement) proxy, new HashMap(), time, args[0].toString());
 
                 if (time >= ConfigurationParameters.slowQueryThreshold) {
                     SlowQueryLogger.info(sb.toString());

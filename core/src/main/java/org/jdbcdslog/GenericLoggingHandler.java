@@ -51,14 +51,14 @@ public class GenericLoggingHandler implements InvocationHandler {
         if (r instanceof PreparedStatement)
             return wrapByPreparedStatementProxy(r, sql);
         if (r instanceof Statement)
-            return wrapByStatementProxy(r, sql);
+            return wrapByStatementProxy(r);
         if (r instanceof ResultSet)
             return ResultSetLoggingHandler.wrapByResultSetProxy((ResultSet) r);
         return r;
     }
 
-    private Object wrapByStatementProxy(Object r, String sql) {
-        return Proxy.newProxyInstance(r.getClass().getClassLoader(), new Class[] { Statement.class }, new StatementLoggingHandler((Statement) r, sql));
+    private Object wrapByStatementProxy(Object r) {
+        return Proxy.newProxyInstance(r.getClass().getClassLoader(), new Class[] { Statement.class }, new StatementLoggingHandler((Statement) r));
     }
 
     private Object wrapByPreparedStatementProxy(Object r, String sql) {
