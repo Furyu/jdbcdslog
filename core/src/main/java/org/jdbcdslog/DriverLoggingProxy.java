@@ -16,6 +16,7 @@ public class DriverLoggingProxy implements Driver {
     static final String targetDriverParameter = "targetDriver";
 
     static {
+        logger.debug("Registering jdbcdslog's driver proxy");
         try {
             DriverManager.registerDriver(new DriverLoggingProxy());
         } catch (Exception exception) {
