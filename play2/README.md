@@ -10,6 +10,9 @@ You must add two dependencies to your build settings at first:
 In conf/jdbcdslog.properties:
 
   jdbcdslog.pluginClassName=com.github.furyu.jdbcdslog.fluent.FluentEventHandler
+  jdbcdslog.driverName=mysql
+  // or else the database you use
+  // jdbcdslog.driverName=oracle
 
 In conf/play.plugins:
 

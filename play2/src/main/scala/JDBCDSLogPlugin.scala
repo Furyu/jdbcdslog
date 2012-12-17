@@ -51,6 +51,9 @@ import play.api.db.BoneCPPlugin
  * 3. Put `jdbcdslog.properties` file anywhere in the classpath
  *
  *   jdbcdslog.pluginClassName=com.github.furyu.jdbcdslog.fluent.FluentEventHandler
+ *   jdbcdslog.driverName=mysql
+ *   // or else the database you use
+ *   // jdbcdslog.driverName=oracle
  *
  *
  * @param app Running Play application
