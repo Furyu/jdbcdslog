@@ -18,7 +18,7 @@ public class PreparedStatementLoggingHandler implements InvocationHandler {
 
     String sql = null;
 
-    static List setMethods = Arrays.asList(new String[] { "setAsciiStream", "setBigDecimal", "setBinaryStream", "setBoolean", "setByte", "setBytes", "setCharacterStream", "setDate", "setDouble", "setFloat", "setInt", "setLong", "setObject", "setShort", "setString", "setTime", "setTimestamp", "setURL" });
+    static List setMethods = Arrays.asList(new String[] { "setAsciiStream", "setBigDecimal", "setBinaryStream", "setBoolean", "setByte", "setBytes", "setCharacterStream", "setDate", "setDouble", "setFloat", "setInt", "setLong", "setObject", "setShort", "setString", "setTime", "setTimestamp", "setURL", "setNull" });
 
     static List executeMethods = Arrays.asList(new String[] { "addBatch", "execute", "executeQuery", "executeUpdate" });
 
@@ -82,8 +82,13 @@ public class PreparedStatementLoggingHandler implements InvocationHandler {
             if (toLog)
                 t1 = System.currentTimeMillis();
             r = method.invoke(target, args);
-            if (setMethods.contains(method.getName()) && args[0] instanceof Integer)
-                parameters.put(args[0], args[1]);
+            if (setMethods.contains(method.getName()) && args[0] instanceof Integer) {
+                if (method.getName().equals("setNull")) {
+                    parameters.put(args[0], "null");
+                } else {
+                    parameters.put(args[0], args[1]);
+                }
+            }
 
             if ("clearParameters".equals(method.getName()))
                 parameters = new TreeMap();

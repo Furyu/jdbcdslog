@@ -59,6 +59,7 @@ class FluentEventHandler extends EventHandler {
     val db = new util.HashMap[String, AnyRef]()
     data.put("db", db)
     val stmt = parser.parse(sql).map { stmt2 =>
+      log.debug(stmt2.toString)
       try {
         val schema = schemaFor(prepStmt)
         resolver.resolve(stmt2, schema)
