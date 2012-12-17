@@ -36,7 +36,7 @@ object ApplicationBuild extends Build {
   lazy val root = Project("root", base = file("."))
     .settings(defaultSettings:_*)
     .settings(publish := {}, publishLocal := {})
-    .aggregate(core, slf4j, fluent)
+    .aggregate(core, slf4j, fluent, play2)
 
   lazy val core = Project(baseName + "-core", base = file("core")).settings(
     organization := appOrganization,
@@ -109,6 +109,12 @@ object ApplicationBuild extends Build {
         "com.sun.jmx", "jmxri"
         )
     )
+  ) dependsOn (fluent)
+
+  lazy val play2 = Project(baseName + "-play2", base = file("play2")).settings(
+    organization := appOrganization,
+    version := appVersion,
+    libraryDependencies += "play" % "play_2.9.1" % "2.0.4"
   ) dependsOn (fluent)
 
 }
