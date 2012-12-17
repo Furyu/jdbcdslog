@@ -43,11 +43,7 @@ public class PreparedStatementLoggingHandler implements InvocationHandler {
                 try
                 {
                     Object obj = parameters.get(new Integer(argIdx));
-                    if (obj != null) {
-                        arg = ConfigurationParameters.rdbmsSpecifics.formatParameter(obj);
-                    } else {
-                        arg = "?";
-                    }
+                    arg = ConfigurationParameters.rdbmsSpecifics.formatParameter(obj);
                 }
                 catch (IndexOutOfBoundsException e)
                 {
@@ -84,7 +80,7 @@ public class PreparedStatementLoggingHandler implements InvocationHandler {
             r = method.invoke(target, args);
             if (setMethods.contains(method.getName()) && args[0] instanceof Integer) {
                 if (method.getName().equals("setNull")) {
-                    parameters.put(args[0], "null");
+                    parameters.put(args[0], null);
                 } else {
                     parameters.put(args[0], args[1]);
                 }

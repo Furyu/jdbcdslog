@@ -32,6 +32,8 @@ package object format {
         seqExprWrites.writes(seq.asInstanceOf[Seq[SqlExpr]])
       case any: Any =>
         any
+      case null =>
+          null
     }
   }
 
