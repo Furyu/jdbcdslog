@@ -94,12 +94,10 @@ object expr {
   implicit object FieldIdentWrites extends JavaMapWrites[FieldIdent] {
     def writes(fi: FieldIdent) = {
       val FieldIdent(explicitQualifier, name, symbol, _) = fi
-      val relationName = symbol match {
+      val relationName = Option(symbol).collect {
         case ColumnSymbol(rel, col, _) =>
           println("rel=" + rel + ", col=" + col)
-          Some(rel)
-        case _ =>
-          throw new RuntimeException("Unexpected symbol found: " + symbol)
+          rel
       }
       val qualifier = explicitQualifier.orElse(relationName)
       val tableName = for {

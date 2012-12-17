@@ -5,8 +5,17 @@ import java.util
 import org.fluentd.logger.FluentLogger
 import com.github.stephentu.scalasqlparser._
 import scala.util.DynamicVariable
-import annotation.tailrec
-import java.sql.{Statement, PreparedStatement}
+import java.sql.Statement
+import org.slf4j.LoggerFactory
+
+trait ConnectionProvider {
+  def withConnection[T](url: String)(block: java.sql.Connection => T): T
+}
+
+object ConnectionProvider {
+  var provider: Option[ConnectionProvider] = None
+  def withConnection[T](url: String)(block: java.sql.Connection => T): Option[T] = provider.map(_.withConnection(url)(block))
+}
 
 class FluentEventHandler extends EventHandler {
 
@@ -14,20 +23,27 @@ class FluentEventHandler extends EventHandler {
 
   val currentContext: DynamicVariable[Option[Context]] = new DynamicVariable(None)
 
+  val log = LoggerFactory.getLogger(classOf[FluentEventHandler])
   val logger = FluentLogger.getLogger("debug.test")
   val parser = new SQLParser()
   val resolver = new Resolver {}
   val jdbcUrlPattern = """jdbc:mysql://([^\:]+):(\d+)/(.+)""".r
-  val schemas = new scala.collection.mutable.HashMap[String, MySQLSchema]
-    with scala.collection.mutable.SynchronizedMap[String, MySQLSchema]
+  val schemas = new scala.collection.mutable.HashMap[String, Definitions]
+    with scala.collection.mutable.SynchronizedMap[String, Definitions]
 
-  private def schemaFor(prepStmt: Statement) = {
-    val url = prepStmt.getConnection.getMetaData.getURL
+  private def schemaFor(prepStmt: Statement): Definitions = {
+    val conn = prepStmt.getConnection
+    val url = conn.getMetaData.getURL
     schemas.getOrElseUpdate(
       url,
       url match {
         case jdbcUrlPattern(host, port, db) =>
-          new MySQLSchema(host, port.toInt, db, new util.Properties())
+            ConnectionProvider.withConnection(url) { conn =>
+              new MySQLSchema(conn, db).loadSchema()
+            }.getOrElse {
+              throw new RuntimeException("ConnectionProvider must be registered to use FleuntEventHandler")
+            }
+        // TODO Support more databases
         case u =>
           throw new RuntimeException("Unexpected format of JDBC url: " + u)
       }
@@ -43,8 +59,14 @@ class FluentEventHandler extends EventHandler {
     val db = new util.HashMap[String, AnyRef]()
     data.put("db", db)
     val stmt = parser.parse(sql).map { stmt2 =>
-      val schema = schemaFor(prepStmt)
-      resolver.resolve(stmt2, schema.loadSchema())
+      try {
+        val schema = schemaFor(prepStmt)
+        resolver.resolve(stmt2, schema)
+      } catch {
+        case e: ResolutionException =>
+          log.warn("Unexpectedly got an ResolutionException while resolving a SQL statement. schemas=" + schemas, e)
+          stmt2
+      }
     }.map(implicitly[JavaMapWrites[Stmt]].writes).map { stmt =>
       import collection.JavaConverters._
       for ((k,v) <- stmt.asInstanceOf[util.Map[String, AnyRef]].asScala) {
