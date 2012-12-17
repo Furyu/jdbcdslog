@@ -90,6 +90,7 @@ object ApplicationBuild extends Build {
     publish := {},
     publishLocal := {},
     libraryDependencies ++= Seq(
+      "mysql" % "mysql-connector-java" % "5.1.18",
       "org.slf4j" % "slf4j-log4j12" % "1.5.10" exclude(
         "javax.jms", "jms"
         ) exclude(
