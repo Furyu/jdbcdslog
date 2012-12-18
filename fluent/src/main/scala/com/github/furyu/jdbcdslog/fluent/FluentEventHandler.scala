@@ -8,15 +8,57 @@ import scala.util.DynamicVariable
 import java.sql.Statement
 import org.slf4j.LoggerFactory
 
+/**
+ * Pluggable java.sql.Connection provider used by FluentEventHandler.
+ *
+ * FluentEventHandler uses an instance of ConnectionProvider while it looks up for
+ * table/column definitions to resolve relation names (aliases) in SQL statements.
+ */
 trait ConnectionProvider {
+  /**
+   * Execute a block with a java.sql.Connection as an argument.
+   *
+   * @param url JDBC url e.g. jdbc:mysql://host/database
+   * @param block the block executed with an provided java.sql.Connection as an argument
+   * @tparam T the return type of block and this function
+   * @return the value the block returned
+   */
   def withConnection[T](url: String)(block: java.sql.Connection => T): T
 }
 
 object ConnectionProvider {
+  /**
+   * The underlying ConnectionProvider instance used to provided connections.
+   * You should set this before FluentEventHandler#statement is called for first time.
+   */
   var provider: Option[ConnectionProvider] = None
-  def withConnection[T](url: String)(block: java.sql.Connection => T): Option[T] = provider.map(_.withConnection(url)(block))
+
+  /**
+   * Execute a block with a java.sql.Connection as an argument.
+   *
+   * @param url JDBC url e.g. jdbc:mysql://host/database
+   * @param block the block executed with an provided java.sql.Connection as an argument
+   * @tparam T the return type of block and this function
+   * @return the value the block returned
+   */
+  def withConnection[T](url: String)(block: java.sql.Connection => T): Option[T] =
+    provider.map(_.withConnection(url)(block))
 }
 
+/**
+ * FluentEventHandler is a jdbcdslog plugin to record every SQL statements executed through JDBC to Fluentd.
+ *
+ * It works as FluentEventHandler#statement is invoked when jdbcdslog detects invocations of
+ * - java.sql.Statement
+ * - java.sql.CallableStatement
+ * - java.sql.PreparedStatement
+ *
+ *  FluentEventHandler analyzes or resolves relations, fields in statements and normalize every fields in
+ *    `relation name (or alias)`.`column name`
+ *  to
+ *    `table name`.`column name`
+ *  for later use e.g. log analysis.
+ */
 class FluentEventHandler extends EventHandler {
 
   import DefaultWrites._
