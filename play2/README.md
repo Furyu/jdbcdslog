@@ -17,3 +17,7 @@ In conf/jdbcdslog.properties:
 In conf/play.plugins:
 
   201:jp.furyu.play.jdbcdslog.JDBCDSLogPlugin
+
+jdbcdslog depends on slf4j which requires logging implementation e.g. logback, log4j, etc at run time.
+But you don't need to add logback or log4j explicitly your dependencies because
+logback is already included in Play2's dependencies.
