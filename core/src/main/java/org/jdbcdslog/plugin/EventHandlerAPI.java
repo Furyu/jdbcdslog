@@ -1,17 +1,28 @@
 package org.jdbcdslog.plugin;
 
-import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Map;
 
 public class EventHandlerAPI {
-    private static EventHandler plugged = EventHandlerFactory.createFromConfig();
+    private static EventHandler instance;
 
     public static void statement(Statement stmt, Map parameters, long time, String sql) {
-        plugged.statement(stmt, sql, parameters, time);
+        getInstance().statement(stmt, sql, parameters, time);
     }
 
+    @Deprecated
     public static EventHandler getEventHandler() {
-        return plugged;
+        return getInstance();
+    }
+
+    public static EventHandler getInstance() {
+        if (instance == null) {
+            instance = EventHandlerFactory.createFromConfig();
+        }
+        return instance;
+    }
+
+    public static void setInstance(EventHandler arg) {
+        instance = arg;
     }
 }

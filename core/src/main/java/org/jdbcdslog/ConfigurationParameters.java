@@ -18,7 +18,7 @@ public class ConfigurationParameters {
     static Boolean showTime = false;
     static boolean printStackTrace = false;
     static RdbmsSpecifics rdbmsSpecifics = new OracleRdbmsSpecifics(); // oracle is default db.
-    static Class pluginClass = StdoutEventHandler.class;
+    static Class<?> pluginClass = StdoutEventHandler.class;
 
     static {
         ClassLoader loader = ConfigurationParameters.class.getClassLoader();
@@ -121,7 +121,7 @@ public class ConfigurationParameters {
      *
      * @return not null
      */
-    public static Class getPluginClass() {
+    public static Class<?> getPluginClass() {
         return pluginClass;
     }
 

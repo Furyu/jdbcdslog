@@ -7,7 +7,13 @@ object FluentEventHandlerSpec extends Specification {
   "FluentEventHandler" should {
     "send a valid data to a fluentd" in {
 
-      val handler = new FluentEventHandler
+      val props = new java.util.Properties()
+      props.put("jdbcdslog.fluent.host", "localhost")
+      props.put("jdbcdslog.fluent.port", "24224")
+      props.put("jdbcdslog.fluent.tag", "tag1")
+      props.put("jdbcdslog.fluent.label", "label1")
+
+      val handler = new FluentEventHandler(props)
 
 //      handler.statement(
 //        """

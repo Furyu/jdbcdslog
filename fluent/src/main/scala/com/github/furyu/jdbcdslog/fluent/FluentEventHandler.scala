@@ -58,15 +58,56 @@ object ConnectionProvider {
  *  to
  *    `table name`.`column name`
  *  for later use e.g. log analysis.
+ *
+ * @param props the keys `jdbcdslog.fluent.tag` and `jdbcdslog.fluent.label` contains tag and label added
+ *              to log data sent with fluent-java-logger.
  */
-class FluentEventHandler extends EventHandler {
+class FluentEventHandler(props: java.util.Properties) extends EventHandler {
 
   import DefaultWrites._
 
   val currentContext: DynamicVariable[Option[Context]] = new DynamicVariable(None)
 
   val log = LoggerFactory.getLogger(classOf[FluentEventHandler])
-  val logger = FluentLogger.getLogger("debug.test")
+  val logger = {
+
+    log.debug("props=" + props)
+
+    val tag = props.get("jdbcdslog.fluent.tag") match {
+      case t: String =>
+        t
+      case _ =>
+        "debug"
+    }
+    val host = props.get("jdbcdslog.fluent.host") match {
+      case t: String =>
+        t
+      case _ =>
+        "localhost"
+    }
+    val port = props.get("jdbcdslog.fluent.port") match {
+      case t: String =>
+        try {
+          t.toInt
+        } catch {
+          case e: NumberFormatException =>
+            log.warn("jdbcdslog.fluent.port(=" + t + ") must be a number but it was not. " +
+              "Defaulting to 24224 (Fluentd's default port)")
+          24224
+        }
+      case _ =>
+        24224
+    }
+    FluentLogger.getLogger(tag, host, port)
+  }
+  val label = props.get("jdbcdslog.fluent.label") match {
+    case t: String =>
+      t
+    case _ =>
+      log.info("jdbcdslog.fluent.label is not provided in properties. " +
+        "Defaulting to \"test\".")
+      "test"
+  }
   val parser = new SQLParser()
   val resolver = new Resolver {}
   val jdbcUrlPattern = """jdbc:mysql://([^\:]+):(\d+)/(.+)""".r
@@ -96,7 +137,6 @@ class FluentEventHandler extends EventHandler {
     currentContext.withValue(Some(c))(b)
 
   def statement(prepStmt: Statement, sql: String, parameters: util.Map[_, _], time: Long) {
-    val label = "default"
     val data = new util.HashMap[String, AnyRef]()
     val db = new util.HashMap[String, AnyRef]()
     data.put("db", db)
