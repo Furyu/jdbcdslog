@@ -96,7 +96,6 @@ object expr {
       val FieldIdent(explicitQualifier, name, symbol, _) = fi
       val relationName = Option(symbol).collect {
         case ColumnSymbol(rel, col, _) =>
-          println("rel=" + rel + ", col=" + col)
           rel
       }
       val qualifier = explicitQualifier.orElse(relationName)
@@ -108,9 +107,6 @@ object expr {
             tblName
           }
       } yield n
-      if (fi.ctx != null) {
-        println(fi.ctx.relations)
-      }
       val field = tableName.orElse(qualifier).map("`" + _ + "`.").getOrElse("") + "`" + name + "`"
       expression("$field", field)
     }

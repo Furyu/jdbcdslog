@@ -68,10 +68,10 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
 
   val currentContext: DynamicVariable[Option[Context]] = new DynamicVariable(None)
 
-  val log = LoggerFactory.getLogger(classOf[FluentEventHandler])
-  val logger = {
+  val slf4jLogger = LoggerFactory.getLogger(classOf[FluentEventHandler])
+  val fluentLogger = {
 
-    log.debug("props=" + props)
+    slf4jLogger.debug("props=" + props)
 
     val tag = props.get("jdbcdslog.fluent.tag") match {
       case t: String =>
@@ -91,7 +91,7 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
           t.toInt
         } catch {
           case e: NumberFormatException =>
-            log.warn("jdbcdslog.fluent.port(=" + t + ") must be a number but it was not. " +
+            slf4jLogger.warn("jdbcdslog.fluent.port(=" + t + ") must be a number but it was not. " +
               "Defaulting to 24224 (Fluentd's default port)")
           24224
         }
@@ -104,7 +104,7 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
     case t: String =>
       t
     case _ =>
-      log.info("jdbcdslog.fluent.label is not provided in properties. " +
+      slf4jLogger.info("jdbcdslog.fluent.label is not provided in properties. " +
         "Defaulting to \"test\".")
       "test"
   }
@@ -141,13 +141,13 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
     val db = new util.HashMap[String, AnyRef]()
     data.put("db", db)
     val stmt = parser.parse(sql).map { stmt2 =>
-      log.debug(stmt2.toString)
+      slf4jLogger.debug(stmt2.toString)
       try {
         val schema = schemaFor(prepStmt)
         resolver.resolve(stmt2, schema)
       } catch {
         case e: ResolutionException =>
-          log.warn("Unexpectedly got an ResolutionException while resolving a SQL statement. schemas=" + schemas, e)
+          slf4jLogger.warn("Unexpectedly got an ResolutionException while resolving a SQL statement. schemas=" + schemas, e)
           stmt2
       }
     }.map(implicitly[JavaMapWrites[Stmt]].writes).map { stmt =>
@@ -165,8 +165,8 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
           data.put(k, v)
       }
     }
-    println("data=" + data)
-    logger.log(label, data)
+    slf4jLogger.debug("The data being sent to Fluentd=" + data)
+    fluentLogger.log(label, data)
   }
 
   def toJavaMap(m: Map[_, _]): util.Map[String, AnyRef] = {
