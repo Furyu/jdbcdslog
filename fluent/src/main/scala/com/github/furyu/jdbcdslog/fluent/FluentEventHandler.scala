@@ -29,7 +29,14 @@ trait ConnectionProvider {
 object ConnectionProvider {
   /**
    * The underlying ConnectionProvider instance used to provided connections.
-   * You should set this before FluentEventHandler#statement is called for first time.
+   * You must set this before FluentEventHandler#statement is called for first time.
+   *
+   * We don't like any `var`, but we need it HERE.
+   *
+   * We make this not `val` but `var` to allow substituting providers in freedom for cases of
+   * integrating FluentEventHandler with various libraries or frameworks.
+   * While integration, please write your own mechanism to configure ConnectionProvider in your preferred
+   * configuration files, on top of this var.
    */
   var provider: Option[ConnectionProvider] = None
 
@@ -66,6 +73,15 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
 
   import DefaultWrites._
 
+  /**
+   * We need this dynamic variable to pass context-specific data included in the data sent to Fluentd,
+   * from our application to FluentEventHandler.
+   *
+   * Remember that dynamic variables are very similar to thread-locals, thus the same consideration is needed
+   * to use them properly.
+   * For instance, you should not switch between threads after you set a value for the dynamic variable until
+   * any SQL statement you intended to record is executed.
+   */
   val currentContext: DynamicVariable[Option[Context]] = new DynamicVariable(None)
 
   val slf4jLogger = LoggerFactory.getLogger(classOf[FluentEventHandler])
@@ -133,6 +149,14 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
     )
   }
 
+  /**
+   * Evaluated a block of code with the given context.
+   * Wrap any block of code IN THE SAMEwith this method if you want to pass
+   * @param c
+   * @param b
+   * @tparam T
+   * @return
+   */
   def withContext[T](c: Context)(b: => T): T =
     currentContext.withValue(Some(c))(b)
 
