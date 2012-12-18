@@ -26,7 +26,7 @@ public class EventHandlerFactory {
             }
         } else {
             logger.warn("Didn't instantiate an instance of the plugin class because the class '" +
-                    pluginClass.getSimpleName() + "' is not a subclass of orgjdbcdslog.plugin.EventHandler.");
+                    pluginClass.getSimpleName() + "' is not a subclass of org.jdbcdslog.plugin.EventHandler.");
             plugin = new StdoutEventHandler();
         }
 
