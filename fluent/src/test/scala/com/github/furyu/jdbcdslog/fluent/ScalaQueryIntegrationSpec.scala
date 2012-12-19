@@ -2,6 +2,7 @@ package com.github.furyu.jdbcdslog.fluent
 
 import org.specs2.mutable._
 import org.scalaquery.meta.MTable
+import java.sql.{Connection, DriverManager}
 
 object ScalaQueryIntegrationSpec extends Specification {
 
@@ -15,6 +16,16 @@ object ScalaQueryIntegrationSpec extends Specification {
 
       case class Post(id: Long, title: String)
       case class Comment(id: Long, postId: Long, body: String)
+
+      DriverManager.setLogWriter(new java.io.PrintWriter(System.out))
+
+      ConnectionProvider.provider = Option(
+        new ConnectionProvider {
+          def withConnection[T](url: String)(block: (Connection) => T): T = {
+            block(new com.mysql.jdbc.Driver().connect(url, new java.util.Properties()))
+          }
+        }
+      )
 
       // Load the driver and execute the static initializer within it.
       Class.forName("org.jdbcdslog.DriverLoggingProxy")
