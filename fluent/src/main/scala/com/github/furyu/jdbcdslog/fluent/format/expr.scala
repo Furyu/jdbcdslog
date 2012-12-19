@@ -50,31 +50,31 @@ object expr {
 
   implicit val existsWrites: JavaMapWrites[Exists] = writes[Exists] {
     case Exists(select, _) =>
-      expression("$exists", select)
+      expression("exists", select)
   }
 
   implicit val inWrites: JavaMapWrites[In] = writes[In] {
     case In(elem, set, negate, _) =>
-      val in = expression("$in", obj("elem" -> elem, "set" -> set))
+      val in = expression("in", obj("elem" -> elem, "set" -> set))
       if (negate)
-        expression("$not", in)
+        expression("not", in)
     else
         in
   }
 
   implicit val unaryPlusWrites: JavaMapWrites[UnaryPlus] = writes[UnaryPlus] {
     case UnaryPlus(ex, _) =>
-      expression("$unaryPlus", ex)
+      expression("unaryPlus", ex)
   }
 
   implicit val unaryMinusWrites: JavaMapWrites[UnaryMinus] = writes[UnaryMinus] {
     case UnaryMinus(ex, _) =>
-      expression("$unaryMinus", ex)
+      expression("unaryMinus", ex)
   }
 
   implicit val notWrites: JavaMapWrites[Not] = writes[Not] {
     case Not(ex, _) =>
-      expression("$not", ex)
+      expression("not", ex)
   }
 
   implicit val unopWrites: JavaMapWrites[Unop] = writes[Unop] {
@@ -88,7 +88,7 @@ object expr {
 
   implicit val subselectWrites = writes[Subselect] {
     case Subselect(subquery, _) =>
-      expression("$subquery", subquery)
+      expression("subquery", subquery)
   }
 
   implicit object FieldIdentWrites extends JavaMapWrites[FieldIdent] {
@@ -108,7 +108,7 @@ object expr {
           }
       } yield n
       val field = tableName.orElse(qualifier).map("`" + _ + "`.").getOrElse("") + "`" + name + "`"
-      expression("$field", field)
+      expression("field", field)
     }
   }
 

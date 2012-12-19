@@ -229,7 +229,7 @@ object DefaultWrites {
     val exprWrites = implicitly[JavaMapWrites[SqlExpr]]
     def writes(a: Assign): DefaultWrites.Fluent = {
       format.expression(
-        "$assign",
+        "assign",
         format.obj(
           "lhs" -> fieldIdentWrites.writes(a.lhs),
           "rhs" -> exprWrites.writes(a.rhs)

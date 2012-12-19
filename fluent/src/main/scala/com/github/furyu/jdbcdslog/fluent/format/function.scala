@@ -14,7 +14,7 @@ object function {
     fun.put("name", name)
 
     val data = new java.util.HashMap[String, Any]()
-    data.put("$function", fun)
+    data.put("function", fun)
     data
   }
 
