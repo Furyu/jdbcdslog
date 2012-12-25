@@ -8,7 +8,7 @@ import scala.collection.JavaConverters._
 /**
  * 実行されたSQL文のログをとるためのアクション
  */
-abstract class LoggingAction[A](block: Request[A] => Result, userId: => Long, segmentId: => Int) extends Action[A] {
+abstract class LoggingAction[A](block: Request[A] => Result, additions: => Map[String, AnyRef]) extends Action[A] {
 
   def logger: AccessLogger
 
@@ -28,11 +28,8 @@ abstract class LoggingAction[A](block: Request[A] => Result, userId: => Long, se
           "path" -> request.path,
           "params" -> queryStringAsJavaMap,
           "timestamp" -> new Date().getTime.asInstanceOf[AnyRef]
-        ).asJava,
-        "service_id" -> "cardgame",
-        "user_id" -> userId.asInstanceOf[AnyRef],
-        "segment_id" -> segmentId.asInstanceOf[AnyRef]
-      )
+        ).asJava
+      ) ++ additions
     }
 
     logger.log(context)
@@ -45,12 +42,12 @@ abstract class LoggingAction[A](block: Request[A] => Result, userId: => Long, se
 
 object LoggingAction {
 
-  def apply[A](bodyParser: BodyParser[A])(userId: => Long, segmentId: => Int)(block: Request[A] => Result): LoggingAction[A] =
-    new LoggingAction[A](block, userId, segmentId) {
+  def apply[A](bodyParser: BodyParser[A])(additions: => Map[String, AnyRef])(block: Request[A] => Result): LoggingAction[A] =
+    new LoggingAction[A](block, additions) {
       def logger = AccessLogger.default
       def parser = bodyParser
     }
 
-  def apply(userId: => Long, segmentId: => Int)(block: Request[AnyContent] => Result): LoggingAction[AnyContent] =
-    apply[AnyContent](BodyParsers.parse.anyContent)(userId, segmentId)(block)
+  def apply(additions: => Map[String, AnyRef])(block: Request[AnyContent] => Result): LoggingAction[AnyContent] =
+    apply[AnyContent](BodyParsers.parse.anyContent)(additions)(block)
 }
