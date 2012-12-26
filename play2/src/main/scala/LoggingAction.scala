@@ -5,6 +5,23 @@ import com.github.furyu.jdbcdslog.fluent.{Context, FluentEventHandler}
 import java.util.Date
 import scala.collection.JavaConverters._
 
+case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef]) extends Context {
+  // fluent-java-logger can't serialize Scala's Map nor Seq.
+  val queryStringAsJavaMap = request.queryString.map { case (key, value) =>
+    (key, value.asJava)
+  }.asJava
+
+  def toMap: Map[String, AnyRef] = Map(
+    "api" -> Map(
+      "method" -> request.method,
+      "path" -> request.path,
+      "params" -> queryStringAsJavaMap,
+      "timestamp" -> new Date().getTime.asInstanceOf[AnyRef]
+    ).asJava
+  ) ++ additions
+
+}
+
 /**
  * 実行されたSQL文のログをとるためのアクション
  */
@@ -12,25 +29,10 @@ abstract class LoggingAction[A](block: Request[A] => Result, additions: => Map[S
 
   def logger: AccessLogger
 
-  val eventHandler = org.jdbcdslog.plugin.EventHandlerAPI.getInstance().asInstanceOf[FluentEventHandler]
+  def eventHandler: FluentEventHandler
 
   def apply(request: Request[A]): Result = {
-    // fluent-java-logger can't serialize Scala's Map nor Seq.
-    val queryStringAsJavaMap = request.queryString.map { case (key, value) =>
-      (key, value.asJava)
-    }.asJava
-
-    val context = new Context {
-
-      def toMap: Map[String, AnyRef] = Map(
-        "api" -> Map(
-          "method" -> request.method,
-          "path" -> request.path,
-          "params" -> queryStringAsJavaMap,
-          "timestamp" -> new Date().getTime.asInstanceOf[AnyRef]
-        ).asJava
-      ) ++ additions
-    }
+    val context = AccessContext(request, additions)
 
     logger.log(context)
 
@@ -42,12 +44,20 @@ abstract class LoggingAction[A](block: Request[A] => Result, additions: => Map[S
 
 object LoggingAction {
 
-  def apply[A](bodyParser: BodyParser[A])(additions: => Map[String, AnyRef])(block: Request[A] => Result): LoggingAction[A] =
+  def apply[A](bodyParser: BodyParser[A])(accessLogger: AccessLogger, fluentEventHandler: FluentEventHandler, additions: => Map[String, AnyRef])(block: Request[A] => Result): LoggingAction[A] =
     new LoggingAction[A](block, additions) {
-      def logger = AccessLogger.default
+      def logger = accessLogger
       def parser = bodyParser
+      val eventHandler = fluentEventHandler
     }
 
-  def apply(additions: => Map[String, AnyRef])(block: Request[AnyContent] => Result): LoggingAction[AnyContent] =
-    apply[AnyContent](BodyParsers.parse.anyContent)(additions)(block)
+  /**
+   * Creates a LoggingAction with the default `anyContent` body parser
+   */
+  def apply(accessLogger: AccessLogger, fluentEventHandler: FluentEventHandler, additions: => Map[String, AnyRef])(block: Request[AnyContent] => Result): LoggingAction[AnyContent] =
+    LoggingAction(BodyParsers.parse.anyContent)(
+      accessLogger = accessLogger,
+      fluentEventHandler = fluentEventHandler,
+      additions = additions
+    )(block)
 }

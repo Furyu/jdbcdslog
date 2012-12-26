@@ -115,7 +115,13 @@ object ApplicationBuild extends Build {
   lazy val play2 = Project(baseName + "-play2", base = file("play2")).settings(
     organization := appOrganization,
     version := appVersion,
-    libraryDependencies += "play" % "play_2.9.1" % "2.0.4"
+    libraryDependencies ++= Seq(
+      "play" % "play_2.9.1" % "2.0.4",
+      "play" % "play-test_2.9.1" % "2.0.4" % "test",
+      "org.specs2" %% "specs2" % "1.12.3" % "test",
+      "org.mockito" % "mockito-all" % "1.9.0" % "test",
+      "org.hamcrest" % "hamcrest-all" % "1.1" % "test"
+    )
   ) dependsOn (fluent)
 
 }
