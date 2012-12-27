@@ -1,12 +1,11 @@
 package jp.furyu.play.jdbcdslog
 
-import jp.furyu.play.jdbcdslog.{AccessLogger, AccessContext, LoggingAction}
 import org.specs2.mutable._
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import org.specs2.mock.Mockito
-import com.github.furyu.jdbcdslog.fluent.{FluentEventHandler, Context}
+import jp.furyu.jdbcdslog.fluent.{FluentEventHandler, Context}
 
 object LoggingActionSpec extends Specification with Mockito {
 
@@ -37,7 +36,7 @@ object LoggingActionSpec extends Specification with Mockito {
 
       val controller = new Controller {
         val eventHandler = mock[FluentEventHandler].defaultReturn(Ok("stubbed"))
-        def foo = LoggingAction(logger, eventHandler, additions) { request =>
+        def foo = LoggingAction(logger, eventHandler, req => additions) { request =>
           Ok("executed")
         }
       }
@@ -68,7 +67,7 @@ object LoggingActionSpec extends Specification with Mockito {
       val controller = new Controller {
         val eventHandler = mock[FluentEventHandler].defaultReturn(Ok("stubbed"))
         def foo = Secured { request =>
-          LoggingAction(logger, eventHandler, additions) { request =>
+          LoggingAction(logger, eventHandler, req => additions) { request =>
             Ok("foo")
           } apply (request)
         }
@@ -103,7 +102,7 @@ object LoggingActionSpec extends Specification with Mockito {
 
       val controller = new Controller {
         val eventHandler = mock[FluentEventHandler].defaultReturn(Ok("stubbed"))
-        def bar = LoggingAction(logger, eventHandler, additions) { request =>
+        def bar = LoggingAction(logger, eventHandler, req => additions) { request =>
           Secured { request =>
             Ok("bar")
           } apply (request)

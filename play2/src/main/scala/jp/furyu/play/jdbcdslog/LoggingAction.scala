@@ -26,14 +26,14 @@ case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef])
 /**
  * 実行されたSQL文のログをとるためのアクション
  */
-abstract class LoggingAction[A](block: Request[A] => Result, additions: => Map[String, AnyRef]) extends Action[A] {
+abstract class LoggingAction[A](block: Request[A] => Result, additions: Request[A] => Map[String, AnyRef]) extends Action[A] {
 
   def logger: AccessLogger
 
   def eventHandler: FluentEventHandler
 
   def apply(request: Request[A]): Result = {
-    val context = AccessContext(request, additions)
+    val context = AccessContext(request, additions(request))
 
     logger.log(context)
 
@@ -45,7 +45,7 @@ abstract class LoggingAction[A](block: Request[A] => Result, additions: => Map[S
 
 object LoggingAction {
 
-  def apply[A](bodyParser: BodyParser[A])(accessLogger: AccessLogger, fluentEventHandler: FluentEventHandler, additions: => Map[String, AnyRef])(block: Request[A] => Result): LoggingAction[A] =
+  def apply[A](bodyParser: BodyParser[A])(accessLogger: AccessLogger, fluentEventHandler: FluentEventHandler, additions: Request[A] => Map[String, AnyRef])(block: Request[A] => Result): LoggingAction[A] =
     new LoggingAction[A](block, additions) {
       def logger = accessLogger
       def parser = bodyParser
@@ -55,7 +55,7 @@ object LoggingAction {
   /**
    * Creates a LoggingAction with the default `anyContent` body parser
    */
-  def apply(accessLogger: AccessLogger, fluentEventHandler: FluentEventHandler, additions: => Map[String, AnyRef])(block: Request[AnyContent] => Result): LoggingAction[AnyContent] =
+  def apply(accessLogger: AccessLogger, fluentEventHandler: FluentEventHandler, additions: Request[AnyContent] => Map[String, AnyRef])(block: Request[AnyContent] => Result): LoggingAction[AnyContent] =
     LoggingAction(BodyParsers.parse.anyContent)(
       accessLogger = accessLogger,
       fluentEventHandler = fluentEventHandler,
