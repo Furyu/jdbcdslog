@@ -20,7 +20,7 @@ You must add two dependencies to your build settings at first:
 
 In conf/jdbcdslog.properties:
 
-  jdbcdslog.pluginClassName=com.github.furyu.jdbcdslog.fluent.FluentEventHandler
+  jdbcdslog.pluginClassName=jp.furyu.jdbcdslog.fluent.FluentEventHandler
   // The jdbc driver name to switch between DB specifics (See MySqlRdbmsSpecifics, OracleRdbmsSpecifics for details)
   jdbcdslog.driverName=mysql
   // or else the database you use

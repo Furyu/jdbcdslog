@@ -4,9 +4,10 @@ import Keys._
 object ApplicationBuild extends Build {
 
   val appName = "jdbcdslog"
-  val appVersion = "0.1-SNAPSHOT"
+  val appVersion = "0.2-SNAPSHOT"
   val baseName = "jdbcdslog"
-  val appOrganization = "jp.furyu.jdbcdslog"
+  val jdbcdslogOrg = "jp.furyu.jdbcdslog"
+  val play2JdbcdslogOrg = "jp.furyu.play2"
 
   val defaultSettings = Seq(
     crossScalaVersions := Seq("2.9.1", "2.9.2")
@@ -39,7 +40,7 @@ object ApplicationBuild extends Build {
     .aggregate(core, slf4j, fluent, play2)
 
   lazy val core = Project(baseName + "-core", base = file("core")).settings(
-    organization := appOrganization,
+    organization := jdbcdslogOrg,
     version := appVersion,
     autoScalaLibrary := false,
     libraryDependencies ++= Seq(
@@ -56,7 +57,7 @@ object ApplicationBuild extends Build {
   )
 
   lazy val slf4j = Project(baseName + "-slf4j", base = file("slf4j")).settings(
-    organization := appOrganization,
+    organization := jdbcdslogOrg,
     version := appVersion,
     publish := {},
     publishLocal := {},
@@ -67,7 +68,7 @@ object ApplicationBuild extends Build {
   )
 
   lazy val fluent = Project(baseName + "-fluent", base = file("fluent")).settings(
-    organization := appOrganization,
+    organization := jdbcdslogOrg,
     version := appVersion,
     resolvers ++= Seq( 
       "Fluent Maven2 Repository" at "http://fluentd.org/maven2"
@@ -84,36 +85,38 @@ object ApplicationBuild extends Build {
 
   // The project to test jdbcdslog-fluent in Scala console.
   // You need compile dependency to slf4j-log4j and log4j to test it in Scala console.
-  lazy val fluentConsole = Project("fluent-console", base = file("fluent-console")).settings(
-    organization := appOrganization,
-    version := appVersion,
-    publish := {},
-    publishLocal := {},
-    libraryDependencies ++= Seq(
-      "mysql" % "mysql-connector-java" % "5.1.18",
-      "org.slf4j" % "slf4j-log4j12" % "1.5.10" exclude(
-        "javax.jms", "jms"
-        ) exclude(
-        "javax.mail" , "mail"
-        ) exclude(
-        "com.sun.jdmk", "jmxtools"
-        ) exclude(
-        "com.sun.jmx", "jmxri"
-        ),
-      "log4j" % "log4j" % "1.2.14" exclude(
-        "javax.jms", "jms"
-        ) exclude(
-        "javax.mail" , "mail"
-        ) exclude(
-        "com.sun.jdmk", "jmxtools"
-        ) exclude(
-        "com.sun.jmx", "jmxri"
-        )
-    )
-  ) dependsOn (fluent)
+  lazy val fluentConsole = {
+    Project("fluent-console", base = file("fluent-console")).settings(
+      organization := jdbcdslogOrg,
+      version := appVersion,
+      publish := {},
+      publishLocal := {},
+      libraryDependencies ++= Seq(
+        "mysql" % "mysql-connector-java" % "5.1.18",
+        "org.slf4j" % "slf4j-log4j12" % "1.5.10" exclude(
+          "javax.jms", "jms"
+          ) exclude(
+          "javax.mail", "mail"
+          ) exclude(
+          "com.sun.jdmk", "jmxtools"
+          ) exclude(
+          "com.sun.jmx", "jmxri"
+          ),
+        "log4j" % "log4j" % "1.2.14" exclude(
+          "javax.jms", "jms"
+          ) exclude(
+          "javax.mail", "mail"
+          ) exclude(
+          "com.sun.jdmk", "jmxtools"
+          ) exclude(
+          "com.sun.jmx", "jmxri"
+          )
+      )
+    ) dependsOn (fluent)
+  }
 
-  lazy val play2 = Project(baseName + "-play2", base = file("play2")).settings(
-    organization := appOrganization,
+  lazy val play2 = Project("play2-" + baseName, base = file("play2")).settings(
+    organization := play2JdbcdslogOrg,
     version := appVersion,
     libraryDependencies ++= Seq(
       "play" % "play_2.9.1" % "2.0.4",
