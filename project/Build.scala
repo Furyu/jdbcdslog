@@ -34,6 +34,14 @@ object ApplicationBuild extends Build {
       )
   )
 
+  def scalaBaseSettings(componentName: String) = Defaults.defaultSettings ++ ScctPlugin.instrumentSettings ++ Seq(
+    crossScalaVersions := Seq("2.9.1", "2.9.2"),
+//    crossVersion := CrossVersion.full,
+//    parallelExecution in Test := false,
+    parallelExecution in ScctPlugin.ScctTest := false,
+    ScctPlugin.scctReportDir := file("/var/www/html/" + appName + "-" + componentName)
+  )
+
   lazy val root = Project("root", base = file("."))
     .settings(defaultSettings:_*)
     .settings(publish := {}, publishLocal := {})
@@ -67,7 +75,7 @@ object ApplicationBuild extends Build {
     )
   )
 
-  lazy val fluent = Project(baseName + "-fluent", base = file("fluent")).settings(
+  lazy val fluent = Project(baseName + "-fluent", base = file("fluent")).settings(scalaBaseSettings("fluent"):_*).settings(
     organization := jdbcdslogOrg,
     version := appVersion,
     resolvers ++= Seq( 
@@ -115,7 +123,7 @@ object ApplicationBuild extends Build {
     ) dependsOn (fluent)
   }
 
-  lazy val play2 = Project("play2-" + baseName, base = file("play2")).settings(
+  lazy val play2 = Project("play2-" + baseName, base = file("play2")).settings(scalaBaseSettings("play2"):_*).settings(
     organization := play2JdbcdslogOrg,
     version := appVersion,
     libraryDependencies ++= Seq(
