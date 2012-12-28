@@ -13,11 +13,16 @@ case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef])
   }.asJava
 
   def toMap: Map[String, AnyRef] = Map(
-    "api" -> Map(
-      "method" -> request.method,
-      "path" -> request.path,
-      "params" -> queryStringAsJavaMap,
-      "timestamp" -> new Date().getTime.asInstanceOf[AnyRef]
+    "api" -> (
+      Map(
+        "method" -> request.method,
+        "path" -> request.path,
+        "params" -> queryStringAsJavaMap,
+        "timestamp" -> new Date().getTime.asInstanceOf[AnyRef]
+      ) ++ Map(
+        "headers" -> request.headers.toMap.map(t => t._1 -> t._2.asJava).asJava,
+        "languages" -> request.acceptLanguages.map(_.code).asJava
+      )
     ).asJava
   ) ++ additions
 
