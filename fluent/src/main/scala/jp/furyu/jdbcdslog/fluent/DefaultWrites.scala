@@ -260,7 +260,6 @@ object DefaultWrites {
       n match {
         case SelectStmt(projections, relations, filter, groupBy, orderBy, limit, _) =>
           db.put("command", "select")
-          db.put("timestamp", new java.util.Date().getTime().asInstanceOf[Fluent])
 
           val projs = new util.ArrayList[Fluent]()
           projections.foreach { p =>
@@ -274,14 +273,12 @@ object DefaultWrites {
           consumeWhereClause(db, filter)
         case InsertStmt(tableName, insRow, _) =>
           db.put("command", "insert")
-          db.put("timestamp", new java.util.Date().getTime.asInstanceOf[Fluent])
 
           db.put("table", tableName)
           import format.insrow._
           db.put("assigns", implicitly[JavaMapWrites[InsRow]].writes(insRow))
         case UpdateStmt(relations, assigns, filter, _) =>
           db.put("command", "update")
-          db.put("timestamp", new java.util.Date().getTime().asInstanceOf[Fluent])
 
           consumeRelations(db, relations)
           consumeWhereClause(db, filter)

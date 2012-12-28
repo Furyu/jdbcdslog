@@ -5,8 +5,10 @@ import java.util
 import org.fluentd.logger.FluentLogger
 import com.github.stephentu.scalasqlparser._
 import scala.util.DynamicVariable
-import java.sql.Statement
-import org.slf4j.LoggerFactory
+import java.sql.{PreparedStatement, Statement}
+import org.slf4j.{Logger, LoggerFactory}
+import jp.furyu.jdbcdslog.fluent.DefaultWrites.JavaMapWrites
+import scala.util.matching.Regex
 
 /**
  * Pluggable java.sql.Connection provider used by FluentEventHandler.
@@ -69,9 +71,11 @@ object ConnectionProvider {
  * @param props the keys `jdbcdslog.fluent.tag` and `jdbcdslog.fluent.label` contains tag and label added
  *              to log data sent with fluent-java-logger.
  */
-class FluentEventHandler(props: java.util.Properties) extends EventHandler {
+class FluentEventHandler(props: java.util.Properties) extends BaseFluentEventHandler {
 
   import DefaultWrites._
+
+  val schemaFactory = new CachedSchemaFactory
 
   /**
    * We need this dynamic variable to pass context-specific data included in the data sent to Fluentd,
@@ -84,7 +88,6 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
    */
   val currentContext: DynamicVariable[Option[Context]] = new DynamicVariable(None)
 
-  val slf4jLogger = LoggerFactory.getLogger(classOf[FluentEventHandler])
   val fluentLogger = {
 
     slf4jLogger.debug("props=" + props)
@@ -116,6 +119,7 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
     }
     FluentLogger.getLogger(tag, host, port)
   }
+
   val label = props.get("jdbcdslog.fluent.label") match {
     case t: String =>
       t
@@ -124,30 +128,8 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
         "Defaulting to \"test\".")
       "test"
   }
-  val parser = new SQLParser()
-  val resolver = new Resolver {}
-  val jdbcUrlPattern = """jdbc:mysql://([^\:]+):(\d+)/(.+)""".r
-  val schemas = new scala.collection.mutable.HashMap[String, Definitions]
-    with scala.collection.mutable.SynchronizedMap[String, Definitions]
 
-  private def schemaFor(prepStmt: Statement): Definitions = {
-    val conn = prepStmt.getConnection
-    val url = conn.getMetaData.getURL
-    schemas.getOrElseUpdate(
-      url,
-      url match {
-        case jdbcUrlPattern(host, port, db) =>
-            ConnectionProvider.withConnection(url) { conn =>
-              new MySQLSchema(conn, db).loadSchema()
-            }.getOrElse {
-              throw new RuntimeException("ConnectionProvider must be registered to use FleuntEventHandler")
-            }
-        // TODO Support more databases
-        case u =>
-          throw new RuntimeException("Unexpected format of JDBC url: " + u)
-      }
-    )
-  }
+  val fluentMarshaller = new FluentMarshaller
 
   /**
    * Evaluated a block of code with the given context.
@@ -160,18 +142,86 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
   def withContext[T](c: Context)(b: => T): T =
     currentContext.withValue(Some(c))(b)
 
+
+  def context: Option[Context] = currentContext.value
+}
+
+trait SchemaFactory {
+  def schemaFor(prepStmt: Statement): Definitions
+}
+
+class CachedSchemaFactory extends SchemaFactory {
+
+  val connectionProvider = ConnectionProvider.provider.getOrElse {
+    throw new RuntimeException("ConnectionProvider must be registered to use FleuntEventHandler")
+  }
+
+  val jdbcUrlPattern = """jdbc:mysql://([^\:]+):(\d+)/(.+)""".r
+
+  val schemas = new scala.collection.mutable.HashMap[String, Definitions]
+    with scala.collection.mutable.SynchronizedMap[String, Definitions]
+
+  def schemaFor(prepStmt: Statement): Definitions  = {
+    val conn = prepStmt.getConnection
+    val url = conn.getMetaData.getURL
+    schemas.getOrElseUpdate(
+      url,
+      url match {
+        case jdbcUrlPattern(host, port, db) =>
+          connectionProvider.withConnection(url) { conn =>
+            new MySQLSchema(conn, db).loadSchema()
+          }
+        // TODO Support more databases
+        case u =>
+          throw new RuntimeException("Unexpected format of JDBC url: " + u)
+      }
+    )
+  }
+}
+
+/**
+ * We want BaseFluentEventHandler to be free from the implementation details of:
+ * - org.slf4j.Logger
+ * - java.sql.PreparedStatement
+ * - `current` context
+ * - FluentLogger
+ */
+abstract class BaseFluentEventHandler extends EventHandler {
+  val fluentLogger: FluentLogger
+  val fluentMarshaller: FluentMarshaller
+  val label: String
+  val schemaFactory: SchemaFactory
+  val slf4jLogger = LoggerFactory.getLogger(this.getClass)
+
+  def context: Option[Context]
+
   def statement(prepStmt: Statement, sql: String, parameters: util.Map[_, _], time: Long) {
+    val schema = schemaFactory.schemaFor(prepStmt)
+    val data = fluentMarshaller.marshal(sql, schema, context, time)
+    slf4jLogger.debug("The data being sent to Fluentd=" + data)
+    fluentLogger.log(label, data)
+  }
+}
+
+/**
+ * We want the marshalling part of FLuentEventHandler independent
+ */
+class FluentMarshaller {
+  val parser = new SQLParser()
+  val resolver = new Resolver {}
+  val slf4jLogger = LoggerFactory.getLogger(classOf[FluentMarshaller])
+
+  def marshal(sql: String, schema: Definitions, context: Option[Context], time: Long): java.util.Map[String, AnyRef] = {
     val data = new util.HashMap[String, AnyRef]()
     val db = new util.HashMap[String, AnyRef]()
     data.put("db", db)
     val stmt = parser.parse(sql).map { stmt2 =>
       slf4jLogger.debug(stmt2.toString)
       try {
-        val schema = schemaFor(prepStmt)
         resolver.resolve(stmt2, schema)
       } catch {
         case e: ResolutionException =>
-          slf4jLogger.warn("Unexpectedly got an ResolutionException while resolving a SQL statement. schemas=" + schemas, e)
+          slf4jLogger.warn("Unexpectedly got an ResolutionException while resolving a SQL statement.", e)
           stmt2
       }
     }.map(implicitly[JavaMapWrites[Stmt]].writes).map { stmt =>
@@ -181,7 +231,7 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
       }
     }
     data.put("timing", time.asInstanceOf[AnyRef])
-    currentContext.value.foreach { context =>
+    context.foreach { context =>
       context.toMap.foreach {
         case (k, v: Map[_, _]) =>
           data.put(k, toJavaMap(v))
@@ -189,11 +239,10 @@ class FluentEventHandler(props: java.util.Properties) extends EventHandler {
           data.put(k, v)
       }
     }
-    slf4jLogger.debug("The data being sent to Fluentd=" + data)
-    fluentLogger.log(label, data)
+    data
   }
 
-  def toJavaMap(m: Map[_, _]): util.Map[String, AnyRef] = {
+  protected def toJavaMap(m: Map[_, _]): util.Map[String, AnyRef] = {
     import scala.collection.JavaConverters._
     m.map {
       case (k, v: Map[_, _]) =>
