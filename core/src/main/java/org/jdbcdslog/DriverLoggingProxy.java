@@ -109,7 +109,7 @@ public class DriverLoggingProxy implements Driver {
         return false;
     }
 
-    @Override
+    // Overrides on JDK7
     public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return null;
     }

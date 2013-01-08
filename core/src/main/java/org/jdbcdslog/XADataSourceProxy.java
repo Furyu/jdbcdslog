@@ -14,7 +14,7 @@ public class XADataSourceProxy extends DataSourceProxyBase implements XADataSour
         super();
     }
 
-    @Override
+    // Overrides on JDK7
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return null;
     }

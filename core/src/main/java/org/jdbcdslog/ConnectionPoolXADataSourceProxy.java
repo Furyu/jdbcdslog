@@ -15,7 +15,7 @@ public class ConnectionPoolXADataSourceProxy extends DataSourceProxyBase impleme
         super();
     }
 
-    @Override
+    // Overrides on JDK7
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return null;
     }
