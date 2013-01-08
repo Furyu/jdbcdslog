@@ -10,7 +10,9 @@ object ApplicationBuild extends Build {
   val play2JdbcdslogOrg = "jp.furyu.play2"
 
   val defaultSettings = Seq(
-    crossScalaVersions := Seq("2.9.1", "2.9.2")
+    scalacOptions ++= Seq("-encoding", "UTF-8", "-Xlint","-deprecation", "-unchecked"),
+    // Ensure that you run sbt with JDK6
+    javacOptions ++= Seq("-source","1.6","-target","1.6", "-encoding", "UTF-8", "-Xlint")
   )
 
   val log4jDependenciesInTest = Seq(
@@ -34,7 +36,7 @@ object ApplicationBuild extends Build {
       )
   )
 
-  def scalaBaseSettings(componentName: String) = Defaults.defaultSettings ++ ScctPlugin.instrumentSettings ++ Seq(
+  def scalaBaseSettings(componentName: String) = Defaults.defaultSettings ++ defaultSettings ++ ScctPlugin.instrumentSettings ++ Seq(
     crossScalaVersions := Seq("2.9.1", "2.9.2"),
 //    crossVersion := CrossVersion.full,
 //    parallelExecution in Test := false,
@@ -43,11 +45,13 @@ object ApplicationBuild extends Build {
   )
 
   lazy val root = Project("root", base = file("."))
-    .settings(defaultSettings:_*)
-    .settings(publish := {}, publishLocal := {})
-    .aggregate(core, slf4j, fluent, play2)
+    .settings(
+    crossScalaVersions := Seq("2.9.1", "2.9.2"),
+    publish := {},
+    publishLocal := {}
+    ).aggregate(core, slf4j, fluent, play2)
 
-  lazy val core = Project(baseName + "-core", base = file("core")).settings(
+  lazy val core = Project(baseName + "-core", base = file("core")).settings(defaultSettings:_*).settings(
     organization := jdbcdslogOrg,
     version := appVersion,
     autoScalaLibrary := false,
