@@ -91,7 +91,9 @@ object ApplicationBuild extends Build {
       "mysql" % "mysql-connector-java" % "5.1.18" % "test",
       "org.mockito" % "mockito-all" % "1.9.0" % "test",
       "org.scalaquery" % "scalaquery_2.9.0-1" % "0.9.5" % "test",
-      "org.specs2" %% "specs2" % "1.9" % "test"
+      "org.specs2" %% "specs2" % "1.9" % "test",
+      "org.codehaus.jackson" % "jackson-mapper-asl" % "1.9.11" % "test",
+      "org.codehaus.jackson" % "jackson-core-asl" % "1.9.11" % "test"
     ) ++ log4jDependenciesInTest
   ) dependsOn (core)
 

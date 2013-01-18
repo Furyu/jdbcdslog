@@ -26,7 +26,7 @@ object literal {
   implicit val intervalWrites = writes[IntervalLiteral] { case IntervalLiteral(date, unit, _) =>
     val data = new java.util.HashMap[String, AnyRef]()
     data.put("date", date)
-    data.put("unit", unit)
+    data.put("unit", unit.toString)
     data
   }
 
