@@ -145,7 +145,7 @@ class FluentMarshallerSpec extends Specification {
       val expected = {
         val db = Map(
           "command" -> "insert",
-          "tableName" -> "items",
+          "table" -> "items",
           "values" -> Map(
             "id" -> 1,
             "value" -> 2

@@ -273,7 +273,7 @@ object DefaultWrites {
         case InsertStmt(table, insRow, _) =>
           db.put("command", "insert")
 
-          db.put("tableName", table.name)
+          db.put("table", table.name)
           import format.insrow._
           db.put("values", implicitly[JavaMapWrites[InsRow]].writes(insRow))
         case UpdateStmt(relations, assigns, filter, _) =>
