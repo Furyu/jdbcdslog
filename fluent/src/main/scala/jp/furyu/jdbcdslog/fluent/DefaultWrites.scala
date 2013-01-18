@@ -143,6 +143,7 @@ object DefaultWrites {
   implicit object SqlExprWrites extends JavaMapWrites[SqlExpr] {
     def writes(sqlExpr: SqlExpr) = {
       import format.expr._
+      import format.field_ident.map
       sqlExpr match {
         case binop: Binop =>
           implicitly[JavaMapWrites[Binop]].writes(binop)
@@ -225,14 +226,14 @@ object DefaultWrites {
 
   val assignWrites = new JavaMapWrites[Assign] {
     import format.expr._
+    import format.field_ident.str
     val fieldIdentWrites = implicitly[JavaMapWrites[FieldIdent]]
     val exprWrites = implicitly[JavaMapWrites[SqlExpr]]
     def writes(a: Assign): DefaultWrites.Fluent = {
       format.expression(
         "assign",
         format.obj(
-          "lhs" -> fieldIdentWrites.writes(a.lhs),
-          "rhs" -> exprWrites.writes(a.rhs)
+          fieldIdentWrites.writes(a.lhs).toString -> exprWrites.writes(a.rhs)
         )
       )
     }
@@ -240,18 +241,16 @@ object DefaultWrites {
 
   implicit object StmtWrites extends JavaMapWrites[Stmt] {
     def consumeRelations(db: util.Map[String, Fluent], relations: Seq[SqlRelation]) {
-      val rels = new util.ArrayList[Fluent]()
-      relations.foreach {
+      val rels = new util.HashMap[String, Any]()
+      relations.collect { case r: TableRelationAST => r }.foreach {
         case rel =>
-          rels.add(implicitly[JavaMapWrites[SqlRelation]].writes(rel))
+          rels.put(rel.name, rel.alias.getOrElse(rel.name))
       }
       db.put("relations", rels)
     }
     def consumeWhereClause(db: util.Map[String, Fluent], filter: Option[SqlExpr]) {
-      val where = new util.ArrayList[Fluent]()
-      db.put("where", where)
       filter.foreach { expr =>
-          where.add(implicitly[JavaMapWrites[SqlExpr]].writes(expr))
+        db.put("where", implicitly[JavaMapWrites[SqlExpr]].writes(expr))
       }
     }
 
@@ -271,23 +270,19 @@ object DefaultWrites {
             consumeRelations(db, r)
           }
           consumeWhereClause(db, filter)
-        case InsertStmt(tableName, insRow, _) =>
+        case InsertStmt(table, insRow, _) =>
           db.put("command", "insert")
 
-          db.put("table", tableName)
+          db.put("tableName", table.name)
           import format.insrow._
-          db.put("assigns", implicitly[JavaMapWrites[InsRow]].writes(insRow))
+          db.put("values", implicitly[JavaMapWrites[InsRow]].writes(insRow))
         case UpdateStmt(relations, assigns, filter, _) =>
           db.put("command", "update")
 
           consumeRelations(db, relations)
           consumeWhereClause(db, filter)
 
-          val as = new util.ArrayList[Any]()
-          db.put("assigns", as)
-          assigns.foreach { case a: Assign =>
-            as.add(assignWrites.writes(a))
-          }
+          db.put("values", format.insrow.assignsToJavaMap(assigns))
       }
       db
     }

@@ -10,9 +10,19 @@ object binop {
     expression(name, obj("lhs" -> lhs, "rhs" -> rhs))
   }
 
+  import expr._
+
   implicit val eqWrites = writes[Eq] { a =>
     val Eq(lhs, rhs, _) = a
-    binOp("eq", lhs, rhs)
+//    binOp("eq", lhs, rhs)
+    val key = lhs match {
+      case f: FieldIdent =>
+        import field_ident.str
+        implicitly[JavaMapWrites[FieldIdent]].writes(f).toString
+      case _ =>
+        lhs.sql
+    }
+    obj(key -> rhs)
   }
 
   implicit val NeqWrites = writes[Neq] { neq =>
