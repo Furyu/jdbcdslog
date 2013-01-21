@@ -20,6 +20,8 @@ object insrow {
     values
   }
 
+  val exprWrites = SqlExprWrites
+
   implicit val insRowWrites: JavaMapWrites[InsRow] = writes[InsRow] {
     case com.github.stephentu.scalasqlparser.Set(assigns, _) =>
       assignsToJavaMap(assigns)
@@ -27,14 +29,14 @@ object insrow {
       val values = new util.HashMap[String, Any]()
       bindings.foreach { b =>
         val sym = b.symbol.get
-        values.put(sym.column, b.value.sql)
+        values.put(sym.column, exprWrites.writes(b.value))
       }
       values
     case com.github.stephentu.scalasqlparser.NamedValues(bindings, _) =>
       val values = new util.HashMap[String, Any]()
       bindings.foreach { b =>
         val sym = b.field.symbol.get
-        values.put(sym.column, b.value.sql)
+        values.put(sym.column, exprWrites.writes(b.value))
       }
       values
   }
