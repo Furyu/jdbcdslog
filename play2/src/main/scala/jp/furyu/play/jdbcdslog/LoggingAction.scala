@@ -6,7 +6,7 @@ import java.util.Date
 import scala.collection.JavaConverters._
 import org.jdbcdslog.plugin.EventHandlerAPI
 
-case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef]) extends Context {
+case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef] = Map.empty[String, AnyRef]) extends Context {
   // fluent-java-logger can't serialize Scala's Map nor Seq.
   val queryStringAsJavaMap = request.queryString.map { case (key, value) =>
     (key, value.asJava)
@@ -33,7 +33,7 @@ case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef])
  */
 class LoggingAction[A](
                         val block: Request[A] => Result,
-                        val additions: Request[A] => Map[String, AnyRef],
+                        val additions: Request[A] => Map[String, AnyRef] = { _: Request[A] => Map.empty[String, AnyRef] },
                         val parser: BodyParser[A],
                         val logger: AccessLogger,
                         val eventHandler: FluentEventHandler)
@@ -106,20 +106,7 @@ object LoggingAction {
    */
   def apply[A](bodyParser: BodyParser[A])(block: Request[A] => Result): LoggingAction[A] = {
     new LoggingAction[A](
-      block = block, additions = { request =>
-        val queryStringAsJavaMap = request.queryString.map {
-          case (key, value) =>
-            key -> value.asJava
-        }.asJava
-        Map(
-          "action" -> Map(
-            "method" -> request.method,
-            "path" -> request.path,
-            "params" -> queryStringAsJavaMap,
-            "timestamp" -> new Date().getTime.asInstanceOf[AnyRef]
-          ).asJava
-        )
-      }, parser = bodyParser, logger = accessLoggerFromConfiguration, eventHandler = eventHandlerFromConfiguration
+      block = block, parser = bodyParser, logger = accessLoggerFromConfiguration, eventHandler = eventHandlerFromConfiguration
     )
   }
 
