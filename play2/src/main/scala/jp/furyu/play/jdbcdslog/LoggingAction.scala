@@ -13,7 +13,7 @@ case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef] 
   }.asJava
 
   def toMap: Map[String, AnyRef] = Map(
-    "api" -> (
+    "action" -> (
       Map(
         "method" -> request.method,
         "path" -> request.path,
