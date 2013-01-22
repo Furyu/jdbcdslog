@@ -4,7 +4,7 @@ import Keys._
 object ApplicationBuild extends Build {
 
   val appName = "jdbcdslog"
-  val appVersion = "0.2-SNAPSHOT"
+  val appVersion = "0.2.0.1"
   val baseName = "jdbcdslog"
   val jdbcdslogOrg = "jp.furyu.jdbcdslog"
   val play2JdbcdslogOrg = "jp.furyu.play2"
