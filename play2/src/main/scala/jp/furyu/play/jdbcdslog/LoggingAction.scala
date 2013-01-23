@@ -22,8 +22,7 @@ case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef] 
         "params" -> queryStringAsJavaMap,
         "timestamp" -> new Date().getTime.asInstanceOf[AnyRef]
       ) ++ Map(
-        "headers" -> request.headers.toMap.map(t => t._1.toLowerCase -> t._2.headOption.orNull).asJava,
-        "languages" -> request.acceptLanguages.map(_.code).asJava
+        "headers" -> request.headers.toMap.map(t => t._1.toLowerCase -> t._2.headOption.orNull).asJava
       )
     ).asJava
   ) ++ additions
