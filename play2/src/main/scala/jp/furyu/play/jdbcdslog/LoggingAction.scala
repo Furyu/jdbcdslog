@@ -66,7 +66,7 @@ class LoggingAction[A](
                 additions = Map(
                   "response" -> Map(
                     "status" -> status,
-                    "headers" -> headers.asJava,
+                    "headers" -> headers.map(t => t._1.toLowerCase -> t._2).asJava,
                     "body" -> bodyAsStr
                   ).asJava)
                 )
