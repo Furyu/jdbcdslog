@@ -5,6 +5,8 @@ import jp.furyu.jdbcdslog.fluent.{Context, FluentEventHandler}
 import java.util.Date
 import scala.collection.JavaConverters._
 import org.jdbcdslog.plugin.EventHandlerAPI
+import play.api.libs.iteratee.{Iteratee, Enumerator}
+import play.api.http.{ContentTypes, HeaderNames}
 
 case class AccessContext[A](request: Request[A], additions: Map[String, AnyRef] = Map.empty[String, AnyRef]) extends Context {
   // fluent-java-logger can't serialize Scala's Map nor Seq.
@@ -44,9 +46,49 @@ class LoggingAction[A](
 
     logger.log(context)
 
-    eventHandler.withContext(context) {
+    val result = eventHandler.withContext(context) {
       block(request)
     }
+
+    result match {
+      case r @ SimpleResult(ResponseHeader(status, headers), body) =>
+        val consume = Iteratee.fold[r.BODY_CONTENT, Array[Byte]](Array.empty) { (result, chunk) =>
+          result ++ r.writeable.transform(chunk)
+        }
+//        val consume = Iteratee.consume[Array[Byte]]()
+
+        val ContentTypeJSON = ContentTypes.JSON
+        headers.get(HeaderNames.CONTENT_TYPE) match {
+          case Some(ContentTypeJSON) =>
+            body(consume).flatMap(_.run).onRedeem { bytes =>
+              val bodyAsStr = new String(bytes, "UTF-8")
+              val context = AccessContext(
+                request = request,
+                additions = Map(
+                  "response" -> Map(
+                    "status" -> status,
+                    "headers" -> headers,
+                    "body" -> bodyAsStr
+                  ))
+                )
+              logger.log(context)
+            }
+          case _ =>
+            ;
+        }
+//      case r: ChunkedResult =>
+//        ;
+//      case r: AsyncResult =>
+//        ;
+//      case r: PlainResult =>
+//        ;
+//      case r: Result =>
+//        ;
+      case _ =>
+        ;
+    }
+
+    result
   }
 }
 
