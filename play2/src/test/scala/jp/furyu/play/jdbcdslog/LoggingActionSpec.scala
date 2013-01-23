@@ -141,14 +141,16 @@ object LoggingActionSpec extends Specification with Mockito {
         additions = additions
       )
 
+      import collection.JavaConverters._
+
       val responseContext = AccessContext(
         request = request,
         additions = Map(
           "response" -> Map(
             "status" -> 200,
-            "headers" -> Map("Content-Type" -> "application/json; charset=utf-8"),
+            "headers" -> Map("Content-Type" -> "application/json; charset=utf-8").asJava,
             "body" -> """{"ok":1}"""
-          ))
+          ).asJava)
       )
 
       val controller = new Controller {

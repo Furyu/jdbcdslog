@@ -67,9 +67,9 @@ class LoggingAction[A](
                 additions = Map(
                   "response" -> Map(
                     "status" -> status,
-                    "headers" -> headers,
+                    "headers" -> headers.asJava,
                     "body" -> bodyAsStr
-                  ))
+                  ).asJava)
                 )
               logger.log(context)
             }
