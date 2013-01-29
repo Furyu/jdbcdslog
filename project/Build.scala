@@ -4,7 +4,7 @@ import Keys._
 object ApplicationBuild extends Build {
 
   val appName = "jdbcdslog"
-  val appVersion = "0.2.0.5"
+  val appVersion = "0.2.1.4"
   val baseName = "jdbcdslog"
   val jdbcdslogOrg = "jp.furyu.jdbcdslog"
   val play2JdbcdslogOrg = "jp.furyu.play2"
@@ -36,12 +36,12 @@ object ApplicationBuild extends Build {
       )
   )
 
-  def scalaBaseSettings(componentName: String) = Defaults.defaultSettings ++ defaultSettings ++ ScctPlugin.instrumentSettings ++ Seq(
-    crossScalaVersions := Seq("2.9.1", "2.9.2"),
+  def scalaBaseSettings(componentName: String) = Defaults.defaultSettings ++ defaultSettings /*++ ScctPlugin.instrumentSettings*/ ++ Seq(
+    crossScalaVersions := Seq("2.9.1", "2.9.2")
 //    crossVersion := CrossVersion.full,
 //    parallelExecution in Test := false,
-    parallelExecution in ScctPlugin.ScctTest := false,
-    ScctPlugin.scctReportDir := file("/var/www/html/" + appName + "-" + componentName)
+//    parallelExecution in ScctPlugin.ScctTest := false
+//    ScctPlugin.scctReportDir := file("/var/www/html/" + appName + "-" + componentName)
   )
 
   lazy val root = Project("root", base = file("."))
@@ -87,7 +87,7 @@ object ApplicationBuild extends Build {
     ),
     libraryDependencies ++= Seq(
       "org.fluentd" % "fluent-logger" % "0.2.4",
-      "com.github.stephentu.scalasqlparser" % "scala-sql-parser_2.9.2" % "0.1-SNAPSHOT",
+      "jp.furyu.scalasqlparser" % "scala-sql-parser_2.9.2" % "0.1.0",
       "mysql" % "mysql-connector-java" % "5.1.18" % "test",
       "org.mockito" % "mockito-all" % "1.9.0" % "test",
       "org.scalaquery" % "scalaquery_2.9.0-1" % "0.9.5" % "test",

@@ -37,7 +37,7 @@ object LoggingActionSpec extends Specification with Mockito {
 
       val controller = new Controller {
         val eventHandler = mock[FluentEventHandler].defaultReturn(Ok("stubbed"))
-        def foo = LoggingAction(logger, eventHandler, req => additions) { request =>
+        def foo = LoggingAction.anyContent(logger, eventHandler)(req => additions) { request =>
           Ok("executed")
         }
       }
@@ -68,7 +68,7 @@ object LoggingActionSpec extends Specification with Mockito {
       val controller = new Controller {
         val eventHandler = mock[FluentEventHandler].defaultReturn(Ok("stubbed"))
         def foo = Secured { request =>
-          LoggingAction(logger, eventHandler, req => additions) { request =>
+          LoggingAction.anyContent(logger, eventHandler)(req => additions) { request =>
             Ok("foo")
           } apply (request)
         }
@@ -103,7 +103,7 @@ object LoggingActionSpec extends Specification with Mockito {
 
       val controller = new Controller {
         val eventHandler = mock[FluentEventHandler].defaultReturn(Ok("stubbed"))
-        def bar = LoggingAction(logger, eventHandler, req => additions) { request =>
+        def bar = LoggingAction[AnyContent](BodyParsers.parse.anyContent, logger, eventHandler)(req => additions) { request =>
           Secured { request =>
             Ok("bar")
           } apply (request)
@@ -146,9 +146,10 @@ object LoggingActionSpec extends Specification with Mockito {
       val responseContext = AccessContext(
         request = request,
         additions = Map(
+          "foo" -> "bar",
           "response" -> Map(
             "status" -> 200,
-            "headers" -> Map("Content-Type" -> "application/json; charset=utf-8").asJava,
+            "headers" -> Map("content-type" -> "application/json; charset=utf-8").asJava,
             "body" -> """{"ok":1}"""
           ).asJava)
       )
@@ -156,7 +157,7 @@ object LoggingActionSpec extends Specification with Mockito {
       val controller = new Controller {
         val eventHandler = mock[FluentEventHandler].defaultReturn(Ok("stubbed"))
         val response = Ok(Json.toJson(Map("ok" -> 1)))
-        def foo = LoggingAction(logger, eventHandler, req => additions) { request =>
+        def foo = LoggingAction.anyContent(logger, eventHandler)(req => additions) { request =>
           response
         }
       }
@@ -164,6 +165,19 @@ object LoggingActionSpec extends Specification with Mockito {
       // each matcher must be a function
       def beOk: SimpleResult[JsValue] = beLike[SimpleResult[JsValue]] {
         case result => status(result) must be equalTo (200)
+      }
+
+      def eq[A](expectedValue: A): A = beLike[A] {
+        case result => result must be equalTo (expectedValue)
+      }
+
+      def eqs(values: List[AccessContext[FakeRequest[AnyContent]]]): AccessContext[FakeRequest[AnyContent]] = beLike[AccessContext[FakeRequest[AnyContent]]] {
+        case result => values must haveOneElementLike { case elem => result must beEqualTo(elem) }
+      }
+
+      def beReqOrResContext: AccessContext[FakeRequest[AnyContent]] = beLike[AccessContext[FakeRequest[AnyContent]]] {
+        //
+        case result => result must beEqualTo (responseContext) or beEqualTo (requestContext)
       }
 
       controller.eventHandler.withContext(context)(beOk) returns controller.response
@@ -175,10 +189,75 @@ object LoggingActionSpec extends Specification with Mockito {
       // A few moments later, the response body is sent to mocked logger.
       contentAsString(result) must be equalTo ("""{"ok":1}""")
 
-      there was one(logger).log(context) then
-        one(logger).log(requestContext) then
-        one(controller.eventHandler).withContext(context)(beOk) then
-        one(logger).log(responseContext)
+      there was two(logger).log(beReqOrResContext) then
+        one(controller.eventHandler).withContext(context)(beOk)
+    }
+
+    "log JSON response without an action" in {
+      val userId = 100
+
+      case class AuthorizedRequest[A](underlying: Request[A], userId: Int) extends WrappedRequest[A](underlying)
+
+      case class Authorized[A](parser: BodyParser[A])(block: AuthorizedRequest[A] => Result) extends Action[A] {
+        override def apply(request: Request[A]): Result = {
+          block(AuthorizedRequest(request, userId))
+        }
+      }
+
+      val logger = mock[AccessLogger]
+
+      val request = FakeRequest("GET", "/json?a=b")
+      val additions = Map("foo" -> "bar")
+      val context = AccessContext(AuthorizedRequest(request, userId), additions)
+
+      val requestContext = AccessContext(
+        request = request,
+        additions = additions
+      )
+
+      import collection.JavaConverters._
+
+      val responseContext = AccessContext(
+        request = request,
+        additions = Map(
+          "foo" -> "bar",
+          "response" -> Map(
+            "status" -> 200,
+            "headers" -> Map("content-type" -> "application/json; charset=utf-8").asJava,
+            "body" -> """{"ok":1}"""
+          ).asJava)
+      )
+
+      val controller = new Controller {
+        val eventHandler = mock[FluentEventHandler].defaultReturn(Ok("stubbed"))
+        val response = Ok(Json.toJson(Map("ok" -> 1)))
+        val proxy = ActionProxy[AnyContent, AuthorizedRequest[AnyContent]](logger, eventHandler, (req: AuthorizedRequest[AnyContent]) => additions, { request: AuthorizedRequest[AnyContent] => response })
+        def foo = Authorized(BodyParsers.parse.anyContent) { request =>
+          proxy(request)
+        }
+      }
+
+      // each matcher must be a function
+      def beOk: SimpleResult[JsValue] = beLike[SimpleResult[JsValue]] {
+        case result => status(result) must be equalTo (200)
+      }
+
+      def beReqOrResContext: AccessContext[FakeRequest[AnyContent]] = beLike[AccessContext[FakeRequest[AnyContent]]] {
+        //
+        case result => result.additions must beEqualTo (responseContext.additions) or beEqualTo (requestContext.additions)
+      }
+
+      controller.eventHandler.withContext(context)(beOk) returns controller.response
+
+      val result = controller.foo()(request)
+
+      status(result) must be equalTo (200)
+      // Here, we await for the response body is consumed, by `contentAsString'.
+      // A few moments later, the response body is sent to mocked logger.
+      contentAsString(result) must be equalTo ("""{"ok":1}""")
+
+      there were two(logger).log(beReqOrResContext) then
+        one(controller.eventHandler).withContext(context)(beOk)
     }
   }
 

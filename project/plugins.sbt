@@ -24,4 +24,4 @@ resolvers += Resolver.url(
 
 addSbtPlugin("com.github.retronym" % "sbt-onejar" % "0.8")
 
-libraryDependencies += sbtPluginExtra("reaktor" % "sbt-scct" % "0.2-SNAPSHOT", "0.11.2", "2.9.1")
+//libraryDependencies += sbtPluginExtra("reaktor" % "sbt-scct" % "0.2-SNAPSHOT", "0.11.2", "2.9.1")
