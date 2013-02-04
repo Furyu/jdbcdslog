@@ -3,6 +3,7 @@ package jp.furyu.jdbcdslog.fluent
 import com.github.stephentu.scalasqlparser._
 
 import java.util
+import org.slf4j.LoggerFactory
 
 object DefaultWrites {
   trait Writes[A,B] {
@@ -127,6 +128,7 @@ object DefaultWrites {
   }
 
   implicit object SymbolWrites extends JavaMapWrites[com.github.stephentu.scalasqlparser.Symbol] {
+    val logger = LoggerFactory.getLogger(this.getClass)
     def writes(a: Symbol) = {
       a match {
         case c: ColumnSymbol =>
@@ -134,7 +136,7 @@ object DefaultWrites {
         case p: ProjectionSymbol =>
           implicitly[JavaMapWrites[ProjectionSymbol]].writes(p)
         case unexpected =>
-          println("Unexpected: " + unexpected)
+          logger.debug("Unexpected: " + unexpected)
           null
       }
     }
