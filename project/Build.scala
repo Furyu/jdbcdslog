@@ -15,25 +15,9 @@ object ApplicationBuild extends Build {
     javacOptions ++= Seq("-source","1.6","-target","1.6", "-encoding", "UTF-8", "-Xlint")
   )
 
-  val log4jDependenciesInTest = Seq(
-    "org.slf4j" % "slf4j-log4j12" % "1.5.10" % "test" exclude(
-      "javax.jms", "jms"
-      ) exclude(
-      "javax.mail" , "mail"
-      ) exclude(
-      "com.sun.jdmk", "jmxtools"
-      ) exclude(
-      "com.sun.jmx", "jmxri"
-      ),
-    "log4j" % "log4j" % "1.2.14" % "test" exclude(
-      "javax.jms", "jms"
-      ) exclude(
-      "javax.mail" , "mail"
-      ) exclude(
-      "com.sun.jdmk", "jmxtools"
-      ) exclude(
-      "com.sun.jmx", "jmxri"
-      )
+  val logbackDependenciesInTest = Seq(
+    "ch.qos.logback" % "logback-classic" % "1.0.9" % "test",
+    "ch.qos.logback" % "logback-core" % "1.0.9" % "test"
   )
 
   def scalaBaseSettings(componentName: String) = Defaults.defaultSettings ++ defaultSettings /*++ ScctPlugin.instrumentSettings*/ ++ Seq(
@@ -56,7 +40,7 @@ object ApplicationBuild extends Build {
     version := appVersion,
     autoScalaLibrary := false,
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % "1.5.10",
+      "org.slf4j" % "slf4j-api" % "1.7.2",
       "org.specs2" %% "specs2" % "1.9" % "test",
       "org.mockito" % "mockito-all" % "1.9.0" % "test",
       "junit" % "junit" % "4.9" % "test",
@@ -65,7 +49,7 @@ object ApplicationBuild extends Build {
       "org.scalaquery" % "scalaquery_2.9.0-1" % "0.9.5" % "test",
       "org.specs2" %% "specs2" % "1.9" % "test",
       "mysql" % "mysql-connector-java" % "5.1.18" % "test"
-    ) ++ log4jDependenciesInTest
+    ) ++ logbackDependenciesInTest
   )
 
   lazy val slf4j = Project(baseName + "-slf4j", base = file("slf4j")).settings(
@@ -94,7 +78,7 @@ object ApplicationBuild extends Build {
       "org.specs2" %% "specs2" % "1.9" % "test",
       "org.codehaus.jackson" % "jackson-mapper-asl" % "1.9.11" % "test",
       "org.codehaus.jackson" % "jackson-core-asl" % "1.9.11" % "test"
-    ) ++ log4jDependenciesInTest
+    ) ++ logbackDependenciesInTest
   ) dependsOn (core)
 
   // The project to test jdbcdslog-fluent in Scala console.
@@ -107,24 +91,8 @@ object ApplicationBuild extends Build {
       publishLocal := {},
       libraryDependencies ++= Seq(
         "mysql" % "mysql-connector-java" % "5.1.18",
-        "org.slf4j" % "slf4j-log4j12" % "1.5.10" exclude(
-          "javax.jms", "jms"
-          ) exclude(
-          "javax.mail", "mail"
-          ) exclude(
-          "com.sun.jdmk", "jmxtools"
-          ) exclude(
-          "com.sun.jmx", "jmxri"
-          ),
-        "log4j" % "log4j" % "1.2.14" exclude(
-          "javax.jms", "jms"
-          ) exclude(
-          "javax.mail", "mail"
-          ) exclude(
-          "com.sun.jdmk", "jmxtools"
-          ) exclude(
-          "com.sun.jmx", "jmxri"
-          )
+        "ch.qos.logback" % "logback-classic" % "1.0.9",
+        "ch.qos.logback" % "logback-core" % "1.0.9"
       )
     ) dependsOn (fluent)
   }
