@@ -94,6 +94,16 @@ object DefaultWrites {
       a match {
         case d: DateLiteral =>
           implicitly[JavaMapWrites[DateLiteral]].writes(d)
+        case d: TimeLiteral =>
+          implicitly[JavaMapWrites[TimeLiteral]].writes(d)
+        case d: TimestampLiteral =>
+          implicitly[JavaMapWrites[TimestampLiteral]].writes(d)
+        case d: ODBCDateLiteral =>
+          implicitly[JavaMapWrites[ODBCDateLiteral]].writes(d)
+        case d: ODBCTimeLiteral =>
+          implicitly[JavaMapWrites[ODBCTimeLiteral]].writes(d)
+        case d: ODBCTimestampLiteral =>
+          implicitly[JavaMapWrites[ODBCTimestampLiteral]].writes(d)
         case f: FloatLiteral =>
           implicitly[JavaMapWrites[FloatLiteral]].writes(f)
         case i: IntLiteral =>
@@ -165,6 +175,8 @@ object DefaultWrites {
           implicitly[JavaMapWrites[In]].writes(in)
         case un: Unop =>
           implicitly[JavaMapWrites[Unop]].writes(un)
+        case postfixUn: PostfixUnop =>
+          implicitly[JavaMapWrites[PostfixUnop]].writes(postfixUn)
         case fi: FieldIdent =>
           implicitly[JavaMapWrites[FieldIdent]].writes(fi)
         case ss: Subselect =>

@@ -86,6 +86,11 @@ object expr {
       implicitly[JavaMapWrites[Not]].writes(n)
   }
 
+  implicit val postfixUnopWrites: JavaMapWrites[PostfixUnop] = writes[PostfixUnop] {
+    case p =>
+      expression(p.opStr, p.expr)
+  }
+
   implicit val subselectWrites = writes[Subselect] {
     case Subselect(subquery, _) =>
       expression("subquery", subquery)

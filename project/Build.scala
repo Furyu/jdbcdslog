@@ -4,7 +4,7 @@ import Keys._
 object ApplicationBuild extends Build {
 
   val appName = "jdbcdslog"
-  val appVersion = "0.2.2"
+  val appVersion = "0.2.3"
   val baseName = "jdbcdslog"
   val jdbcdslogOrg = "jp.furyu.jdbcdslog"
   val play2JdbcdslogOrg = "jp.furyu.play2"
@@ -71,7 +71,7 @@ object ApplicationBuild extends Build {
     ),
     libraryDependencies ++= Seq(
       "org.fluentd" % "fluent-logger" % "0.2.4",
-      "jp.furyu.scalasqlparser" % "scala-sql-parser_2.9.2" % "0.1.1",
+      "jp.furyu.scalasqlparser" % "scala-sql-parser_2.9.2" % "0.1.3",
       "mysql" % "mysql-connector-java" % "5.1.18" % "test",
       "org.mockito" % "mockito-all" % "1.9.0" % "test",
       "org.scalaquery" % "scalaquery_2.9.0-1" % "0.9.5" % "test",

@@ -15,6 +15,36 @@ object literal {
     data
   }
 
+  implicit val timeLiteralWrites = writes[TimeLiteral] { case TimeLiteral(d, _) =>
+    val data = new java.util.HashMap[String, AnyRef]()
+    data.put("time", d)
+    data
+  }
+
+  implicit val timestampLiteralWrites = writes[TimestampLiteral] { case TimestampLiteral(d, _) =>
+    val data = new java.util.HashMap[String, AnyRef]()
+    data.put("timestamp", d)
+    data
+  }
+
+  implicit val odbcDateLiteralWrites = writes[ODBCDateLiteral] { case ODBCDateLiteral(d, _) =>
+    val data = new java.util.HashMap[String, AnyRef]()
+    data.put("date", d)
+    data
+  }
+
+  implicit val odbcTimeLiteralWrites = writes[ODBCTimeLiteral] { case ODBCTimeLiteral(d, _) =>
+    val data = new java.util.HashMap[String, AnyRef]()
+    data.put("time", d)
+    data
+  }
+
+  implicit val odbcTimestampLiteralWrites = writes[ODBCTimestampLiteral] { case ODBCTimestampLiteral(d, _) =>
+    val data = new java.util.HashMap[String, AnyRef]()
+    data.put("timestamp", d)
+    data
+  }
+
   implicit val floatLiteralWrites = writes[FloatLiteral] { case FloatLiteral(v, _) =>
     v
   }
