@@ -35,7 +35,9 @@ object insrow {
     case com.github.stephentu.scalasqlparser.NamedValues(bindings, _) =>
       val values = new util.HashMap[String, Any]()
       bindings.foreach { b =>
-        val sym = b.field.symbol.get
+        val sym = b.field.symbol.getOrElse {
+          throw new RuntimeException("No matching field found for value: " + b.value)
+        }
         values.put(sym.column, exprWrites.writes(b.value))
       }
       values

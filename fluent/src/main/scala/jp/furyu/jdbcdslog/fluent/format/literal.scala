@@ -50,7 +50,7 @@ object literal {
   }
 
   implicit val intLiteralWrites = writes[IntLiteral] { case IntLiteral(v, _) =>
-    v
+    v.toString
   }
 
   implicit val intervalWrites = writes[IntervalLiteral] { case IntervalLiteral(date, unit, _) =>
