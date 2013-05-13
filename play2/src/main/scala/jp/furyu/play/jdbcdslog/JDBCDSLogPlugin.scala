@@ -38,7 +38,7 @@ import play.api.db.BoneCPPlugin
  *   db.default.user=<username>
  *   db.default.password=<password>
  *
- *   # 2. the datasource used by by jdbcdslog-fluent to look up the information about tables and columns, to
+ *   # 2. the datasource used by jdbcdslog-fluent to look up the information about tables and columns, to
  *   # normalize SQL statements not to contain aliases in field names in `WHERE` and `SET` clauses.
  *   #
  *   # Your application itself would not need, and has no need for this datasource.
