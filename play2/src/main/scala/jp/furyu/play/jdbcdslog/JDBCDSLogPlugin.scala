@@ -34,9 +34,9 @@ import play.api.db.BoneCPPlugin
  *
  *   # 1. log every statements executed through the `default` datasource.
  *   db.default.driver=org.jdbcdslog.DriverLoggingProxy
- *   db.default.url="jdbc:jdbcdslog:mysql://cd-db-test.ck5ls8mac0rf.ap-northeast-1.rds.amazonaws.com:3306/cardgamedevdb?targetDriver=com.mysql.jdbc.Driver"
- *   db.default.user=cardgame
- *   db.default.password=c4rdg4m3
+ *   db.default.url="jdbc:mysql://<host>:3306/<dbname>?targetDriver=com.mysql.jdbc.Driver"
+ *   db.default.user=<username>
+ *   db.default.password=<password>
  *
  *   # 2. the datasource used by by jdbcdslog-fluent to look up the information about tables and columns, to
  *   # normalize SQL statements not to contain aliases in field names in `WHERE` and `SET` clauses.
@@ -44,9 +44,9 @@ import play.api.db.BoneCPPlugin
  *   # Your application itself would not need, and has no need for this datasource.
  *   #
  *   db.mysql.driver=com.mysql.jdbc.Driver
- *   db.mysql.url="jdbc:mysql://cd-db-test.ck5ls8mac0rf.ap-northeast-1.rds.amazonaws.com:3306/cardgamedevdb"
- *   db.mysql.user=cardgame
- *   db.mysql.password=c4rdg4m3
+ *   db.mysql.url="jdbc:mysql://<host>:3306/<dbname>"
+ *   db.mysql.user=<username>
+ *   db.mysql.password=<password>
  *
  * 3. Put `jdbcdslog.properties` file anywhere in the classpath
  *
