@@ -8,7 +8,7 @@ import play.api.db.BoneCPPlugin
 /**
  * The jdbcdslog plugin which records every sql statements.
  *
- * There are three configuration you must done in order to use this plugin.
+ * There are three configuration keys you must set in order to use this plugin.
  *
  * 1. You must start the JDBCDSLogPlugin before play's DBPlugin(BoneCP based one)
  *
