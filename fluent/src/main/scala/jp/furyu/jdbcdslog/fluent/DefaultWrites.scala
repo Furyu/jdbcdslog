@@ -256,8 +256,7 @@ object DefaultWrites {
   implicit object StmtWrites extends JavaMapWrites[Stmt] {
     def consumeRelations(db: util.Map[String, Fluent], relations: Seq[SqlRelation]) {
       val rels = new util.HashMap[String, Any]()
-      relations.collect { case r: TableRelationAST => r }.foreach {
-        case rel =>
+      relations.collect { case r: TableRelationAST => r }.foreach { rel =>
           rels.put(rel.name, rel.alias.getOrElse(rel.name))
       }
       db.put("relations", rels)
